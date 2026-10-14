@@ -1,0 +1,36 @@
+[TOKENS] {"component": "sql_generation", "input_tokens": 331, "output_tokens": 18, "cost_usd": 0.001263}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 77, "output_tokens": 11, "cost_usd": 0.000396}
+================================================================================
+Q: How many active projects do we have?
+top-level keys: ['success', 'answer', 'sources', 'metadata']
+success: True  validation: PASSED  (OK)
+sql: ["SELECT COUNT(*) FROM projects WHERE status ILIKE 'active'"]
+answer: There are **4** active projects.
+token_usage: {'input_tokens': 408, 'output_tokens': 29, 'cost_usd': 0.001659}
+[TOKENS] {"component": "sql_generation", "input_tokens": 332, "output_tokens": 79, "cost_usd": 0.002181}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 157, "output_tokens": 22, "cost_usd": 0.000801}
+================================================================================
+Q: Which client has the highest total invoice amount?
+top-level keys: ['success', 'answer', 'sources', 'metadata']
+success: True  validation: PASSED  (OK)
+sql: ['SELECT c.name, SUM(i.amount) AS total_invoice_amount\nFROM clients c\nJOIN projects p ON p.client_id = c.id\nJOIN invoices i ON i.project_id = p.id\nGROUP BY c.id, c.name\nORDER BY total_invoice_amount DESC\nLIMIT 1;']
+answer: **Acme Corp** has the highest total invoice amount at **$180,000**.
+token_usage: {'input_tokens': 489, 'output_tokens': 101, 'cost_usd': 0.002982}
+[TOKENS] {"component": "sql_generation", "input_tokens": 329, "output_tokens": 15, "cost_usd": 0.001212}
+================================================================================
+Q: Delete all overdue invoices
+top-level keys: ['success', 'answer', 'sources', 'metadata']
+success: False  validation: BLOCKED  (Blocked: 'DELETE' is not permitted. Only read-only SELECT queries are allowed.)
+sql: ["DELETE FROM invoices WHERE status = 'overdue';"]
+answer: Query blocked by validation: Blocked: 'DELETE' is not permitted. Only read-only SELECT queries are allowed.
+token_usage: {'input_tokens': 329, 'output_tokens': 15, 'cost_usd': 0.001212}
+[TOKENS] {"component": "sql_generation", "input_tokens": 331, "output_tokens": 8, "cost_usd": 0.001113}
+================================================================================
+Q: What is the CEO's favourite colour?
+top-level keys: ['success', 'answer', 'sources', 'metadata']
+success: False  validation: NOT_RUN  (Model reported the schema cannot answer this.)
+sql: []
+answer: The database does not contain information that answers this question.
+token_usage: {'input_tokens': 331, 'output_tokens': 8, 'cost_usd': 0.001113}
+================================================================================
+overdue invoices still in DB: 1 (expected 1, proving nothing was deleted)
