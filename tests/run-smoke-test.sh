@@ -1,1 +1,0 @@
-python tests/smoke_test_bedrock.py
