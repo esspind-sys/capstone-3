@@ -23,7 +23,7 @@ def route_question(question: str, history: list | None = None) -> tuple[dict, di
         f"{_history_block(history)}"
         'Pick ONE route: "sql", "retrieval", "both" (needs database facts AND policy rules), '
         'or "none" (neither tool covers it). For each tool you pick, write a standalone '
-        "sub-question for that tool only, resolving references to the conversation.\n"
+        "sub-question for that tool only, resolving references to the conversation. Keep the user's own terms such as 'overdue' or 'on hold'; do not reword them into column conditions.\n"
         'Reply with ONLY JSON: {"route": "...", "reason": "<one sentence>", '
         '"sql_question": "... or null", "retrieval_question": "... or null"}\n\n'
         f"Question: {question}"
@@ -79,6 +79,7 @@ def answer_question(question: str, history: list | None = None) -> dict:
         "success": success, "answer": answer,
         "sources": [s for r in results.values() for s in r["sources"]],
         "metadata": {"route": plan["route"], "route_reason": plan.get("reason"),
+                     "sub_questions": {n: plan.get(f"{n}_question") for n in results},
                      "tool_success": {n: r["success"] for n, r in results.items()},
                      "token_usage": usage, "calls": calls},
     }

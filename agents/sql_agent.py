@@ -28,7 +28,7 @@ Tables available:
   - project_id references projects.id
 - invoices(id, project_id, amount, status, due_date, paid_date)
   - status is one of: 'paid', 'pending', 'overdue'
-  - for overdue invoices, filter on status = 'overdue' (status is the system of record)
+  - an invoice is overdue only if status = 'overdue'. Never decide overdue or unpaid by comparing due_date to CURRENT_DATE.
   - amount is in USD
   - project_id references projects.id
 All dates are in ISO 8601 format (YYYY-MM-DD).
@@ -91,7 +91,7 @@ def interpret_results(question: str, sql: str, result: dict) -> tuple[str, dict]
     prompt = (
         f"Question: {question}\nSQL used: {sql}\nColumns: {result['columns']}\n"
         f"Rows: {result['rows'][:20]}\n\n"
-        "Answer the question concisely using ONLY this data, in plain text: at most 3 sentences or a short bullet list, no tables or emoji. "
+        "Answer the question concisely using ONLY this data, in plain text: at most 3 sentences or a short bullet list, no tables or emoji. Describe each column only as its name says (start_date is when a project began); never infer dates or events the data does not record. "
         "If there are no rows, say no matching records were found."
     )
     return call_claude(prompt, "sql_interpretation", max_tokens=400)

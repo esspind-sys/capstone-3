@@ -22,6 +22,7 @@ for expected, q, history in CASES:
     print("=" * 80)
     print(f"Q: {q}" + ("   (follow-up)" if history else ""))
     print(f"route: {m['route']} (expected {expected})  reason: {m['route_reason']}")
+    print(f"sub-questions: {m['sub_questions']}")
     print(f"success: {r['success']}  tools: {m['tool_success']}  sources: {r['sources']}")
     print(f"calls: {[c['component'] for c in m['calls']]}  token_usage: {m['token_usage']}")
     print(f"answer: {r['answer']}")
