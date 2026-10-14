@@ -1,0 +1,5 @@
+clients      rows=5  sample=(1, 'Acme Corp', 'Retail', 'North', Decimal('250000'), datetime.date(2025, 1, 15))
+projects     rows=6  sample=(1, 1, 'Client Portal Redesign', 'active', datetime.date(2025, 2, 1), None, Decimal('150000'))
+consultants  rows=6  sample=(1, 'Alice Chen', 'Senior', 'Frontend Engineering', 1, Decimal('320'))
+invoices     rows=7  sample=(1, 1, Decimal('45000'), 'paid', datetime.date(2025, 3, 1), datetime.date(2025, 2, 28))
+RDS CHECK PASSED: every table returns rows

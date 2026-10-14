@@ -1,0 +1,1 @@
+{"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"AWS": ["arn:aws:iam::886021210116:role/orchestrator-lambda-role-espind", "arn:aws:iam::886021210116:user/Whiz_User_356056.73022747"]}, "Action": "es:*", "Resource": "arn:aws:es:us-east-1:886021210116:domain/orchestrator-search-espind/*"}]}
