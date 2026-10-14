@@ -1,110 +1,79 @@
-[TOKENS] {"component": "routing", "input_tokens": 210, "output_tokens": 53, "cost_usd": 0.001425}
-[TOKENS] {"component": "sql_generation", "input_tokens": 333, "output_tokens": 18, "cost_usd": 0.001269}
-[TOKENS] {"component": "sql_interpretation", "input_tokens": 79, "output_tokens": 14, "cost_usd": 0.000447}
+[TOKENS] {"component": "routing", "input_tokens": 210, "output_tokens": 58, "cost_usd": 0.0015}
+[TOKENS] {"component": "sql_generation", "input_tokens": 380, "output_tokens": 16, "cost_usd": 0.00138}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 97, "output_tokens": 16, "cost_usd": 0.000531}
 ================================================================================
 Q: How many active projects do we have?
-route: sql (expected sql)  reason: This is a straightforward count of active projects stored in the firm database.
-success: True  tools: {'sql': True}  sources: ["SELECT COUNT(*) FROM projects WHERE status ILIKE 'active'"]
-calls: ['routing', 'sql_generation', 'sql_interpretation']  token_usage: {'input_tokens': 622, 'output_tokens': 85, 'cost_usd': 0.003141}
-answer: There are **4** active projects in the database.
-[TOKENS] {"component": "routing", "input_tokens": 213, "output_tokens": 66, "cost_usd": 0.001629}
-[TOKENS] {"component": "retrieval_answer", "input_tokens": 235, "output_tokens": 143, "cost_usd": 0.00285}
+route: sql (expected sql)  reason: This is a straightforward count of active projects, which requires querying the database for project status records.
+success: True  tools: {'sql': True}  sources: ["SELECT COUNT(*) FROM projects WHERE status = 'active'"]
+calls: ['routing', 'sql_generation', 'sql_interpretation']  token_usage: {'input_tokens': 687, 'output_tokens': 90, 'cost_usd': 0.003411}
+answer: There are currently **4 projects** with an active status.
+[TOKENS] {"component": "routing", "input_tokens": 213, "output_tokens": 70, "cost_usd": 0.001689}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 235, "output_tokens": 125, "cost_usd": 0.00258}
 ================================================================================
 Q: What is the escalation process for critical IT tickets?
-route: retrieval (expected retrieval)  reason: The escalation process for critical IT tickets is a procedural/policy question covered in firm process documents, not in the database.
+route: retrieval (expected retrieval)  reason: The escalation process for critical IT tickets is a procedural/policy question covered in the firm's IT support process documents, not in the database.
 success: True  tools: {'retrieval': True}  sources: ['it_support_policy.txt']
-calls: ['routing', 'retrieval_answer']  token_usage: {'input_tokens': 448, 'output_tokens': 209, 'cost_usd': 0.004479}
+calls: ['routing', 'retrieval_answer']  token_usage: {'input_tokens': 448, 'output_tokens': 195, 'cost_usd': 0.004269}
 answer: Based on the document, the escalation process for critical IT tickets is as follows (**it_support_policy.txt**):
 
-1. **At 12 hours**: If the critical ticket is not resolved within 12 hours, it must be escalated to the **on-call engineering lead**.
-2. **At 24 hours**: If the critical ticket remains unresolved at the 24-hour mark, it is automatically escalated to the **department director**.
+1. **At 12 hours**: If the critical ticket is not resolved, it must be escalated to the **on-call engineering lead**.
+2. **At 24 hours**: If the critical ticket remains unresolved, it is automatically escalated to the **department director**.
 
-Note that critical tickets (e.g., client-facing system outages or suspected security breaches) carry a resolution target of **24 hours** from the time they are opened.
-[TOKENS] {"component": "routing", "input_tokens": 219, "output_tokens": 136, "cost_usd": 0.002697}
-[TOKENS] {"component": "sql_generation", "input_tokens": 364, "output_tokens": 102, "cost_usd": 0.002622}
-[TOKENS] {"component": "sql_interpretation", "input_tokens": 342, "output_tokens": 316, "cost_usd": 0.005766}
-[TOKENS] {"component": "retrieval_answer", "input_tokens": 334, "output_tokens": 183, "cost_usd": 0.003747}
-[TOKENS] {"component": "synthesis", "input_tokens": 574, "output_tokens": 440, "cost_usd": 0.008322}
+Note that critical tickets (e.g., client-facing system outages or suspected security breaches) have a target resolution time of **24 hours**.
+[TOKENS] {"component": "routing", "input_tokens": 219, "output_tokens": 114, "cost_usd": 0.002367}
+[TOKENS] {"component": "sql_generation", "input_tokens": 392, "output_tokens": 53, "cost_usd": 0.001971}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 280, "output_tokens": 128, "cost_usd": 0.00276}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 330, "output_tokens": 186, "cost_usd": 0.00378}
+[TOKENS] {"component": "synthesis", "input_tokens": 403, "output_tokens": 255, "cost_usd": 0.005034}
 ================================================================================
 Q: Which invoices are overdue, and what does our billing policy say happens next?
-route: both (expected both)  reason: Identifying overdue invoices requires querying the database for invoice due dates and statuses, while the consequences and next steps are defined in the billing policy documents.
-success: True  tools: {'sql': True, 'retrieval': True}  sources: ["SELECT i.id AS invoice_id, c.name AS client_name, i.amount, i.due_date, i.status\nFROM invoices i\nJOIN projects p ON i.project_id = p.id\nJOIN clients c ON p.client_id = c.id\nWHERE i.due_date < CURRENT_DATE\nAND i.status NOT IN ('paid', 'closed')\nORDER BY i.due_date ASC", 'invoice_billing_policy.txt']
-calls: ['routing', 'sql_generation', 'sql_interpretation', 'retrieval_answer', 'synthesis']  token_usage: {'input_tokens': 1833, 'output_tokens': 1177, 'cost_usd': 0.023154}
-answer: ## Overdue Invoices & Next Steps
+route: both (expected both)  reason: Identifying overdue invoices requires querying the database for invoice due dates and statuses, while understanding what happens next requires retrieving the billing policy escalation procedures.
+success: True  tools: {'sql': True, 'retrieval': True}  sources: ["SELECT id, project_id, amount, status, due_date\nFROM invoices\nWHERE due_date < CURRENT_DATE\nAND status NOT ILIKE 'paid'\nAND status NOT ILIKE 'settled'", 'invoice_billing_policy.txt']
+calls: ['routing', 'sql_generation', 'sql_interpretation', 'retrieval_answer', 'synthesis']  token_usage: {'input_tokens': 1624, 'output_tokens': 736, 'cost_usd': 0.015912}
+answer: There are 4 outstanding invoices that are overdue or pending past their due dates:
 
-### Outstanding Invoices (Past Due)
+- Invoice #2 (Project 1): $45,000, due May 1, 2025
+- Invoice #4 (Project 3): $55,000, due April 1, 2025
+- Invoice #5 (Project 4): $45,000, due May 15, 2025
+- Invoice #7 (Project 6): $58,000, due June 1, 2025
 
-There are **4 invoices** totaling **$203,000** with passed due dates:
+Per invoice_billing_policy.txt, once an invoice passes its due date the following escalation applies: on Day 1, Finance sends an automated reminder; on Day 15, the project manager contacts the client directly; on Day 30, the matter escalates to the engagement director, who may pause non-critical project work; and on Day 60, it is referred to the legal team.
 
-| Invoice ID | Client | Amount | Due Date | Status |
-|---|---|---|---|---|
-| #4 | Beta Financial | $55,000 | Apr 1, 2025 | 🔴 Overdue |
-| #2 | Acme Corp | $45,000 | May 1, 2025 | 🟡 Pending |
-| #5 | Gamma Health | $45,000 | May 15, 2025 | 🟡 Pending |
-| #7 | Epsilon Retail | $58,000 | Jun 1, 2025 | 🟡 Pending |
-
-> ⚠️ Invoices #2, #5, and #7 are still marked *pending* despite their due dates having passed — their statuses likely need updating to *overdue*.
-
----
-
-### What Billing Policy Says Happens Next
-Per **invoice_billing_policy.txt**, the escalation process once an invoice becomes overdue is:
-
-- **Day 1:** Finance sends the client an **automated reminder**
-- **Day 15:** The **project manager contacts the client directly**
-- **Day 30:** Escalated to the **engagement director**, who may **pause non-critical work**
-- **Day 60:** Matter is **referred to the legal team**
-
-### Immediate Priorities
-Given how far past due these invoices are, **Beta Financial (Invoice #4)** is the most urgent — overdue since April 1 — and is likely already in the engagement director or legal escalation window. The three *pending* invoices should be reviewed and escalated accordingly.
-
-> 📝 Note: The billing policy does not address any late fee provisions.
-[TOKENS] {"component": "routing", "input_tokens": 217, "output_tokens": 125, "cost_usd": 0.002526}
-[TOKENS] {"component": "sql_generation", "input_tokens": 350, "output_tokens": 73, "cost_usd": 0.002145}
-[TOKENS] {"component": "sql_interpretation", "input_tokens": 202, "output_tokens": 72, "cost_usd": 0.001686}
-[TOKENS] {"component": "retrieval_answer", "input_tokens": 248, "output_tokens": 187, "cost_usd": 0.003549}
-[TOKENS] {"component": "synthesis", "input_tokens": 332, "output_tokens": 262, "cost_usd": 0.004926}
+Invoice #4 (due April 1) is most at risk of reaching advanced escalation stages. Any write-off requires CFO approval, and consultants must not discuss payment disputes with client staff — all billing queries must go through the project manager.
+[TOKENS] {"component": "routing", "input_tokens": 217, "output_tokens": 119, "cost_usd": 0.002436}
+[TOKENS] {"component": "sql_generation", "input_tokens": 399, "output_tokens": 69, "cost_usd": 0.002232}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 216, "output_tokens": 54, "cost_usd": 0.001458}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 247, "output_tokens": 185, "cost_usd": 0.003516}
+[TOKENS] {"component": "synthesis", "input_tokens": 326, "output_tokens": 180, "cost_usd": 0.003678}
 ================================================================================
 Q: Which projects are on hold, and what does project governance require for them?
-route: both (expected both)  reason: The database is needed to identify which projects currently have an 'on hold' status, while policy documents are needed to explain what project governance requires for projects in that status.
-success: True  tools: {'sql': True, 'retrieval': True}  sources: ["SELECT p.id AS project_id, p.name AS project_name, c.name AS client_name, p.start_date AS date_placed_on_hold\nFROM projects p\nJOIN clients c ON p.client_id = c.id\nWHERE p.status ILIKE 'on-hold'", 'project_governance_policy.txt']
-calls: ['routing', 'sql_generation', 'sql_interpretation', 'retrieval_answer', 'synthesis']  token_usage: {'input_tokens': 1349, 'output_tokens': 719, 'cost_usd': 0.014832}
-answer: ## Projects Currently On Hold
+route: both (expected both)  reason: The question requires database facts to identify which projects currently have an 'on hold' status, and policy documents to explain what project governance requires for projects in that state.
+success: True  tools: {'sql': True, 'retrieval': True}  sources: ["SELECT p.id AS project_id,\n       p.name AS project_name,\n       c.name AS client_name,\n       p.start_date\nFROM projects p\nJOIN clients c ON p.client_id = c.id\nWHERE p.status = 'on-hold'", 'project_governance_policy.txt']
+calls: ['routing', 'sql_generation', 'sql_interpretation', 'retrieval_answer', 'synthesis']  token_usage: {'input_tokens': 1405, 'output_tokens': 607, 'cost_usd': 0.01332}
+answer: Currently, one project is on hold: Project ID 4, "Patient Records Modernization" for client Gamma Health, placed on hold on February 15, 2025.
 
-There is **1 project** currently on hold:
+According to project_governance_policy.txt, the following governance requirements apply:
 
-| Project ID | Project Name | Client | Date Placed On Hold |
-|------------|-------------|--------|---------------------|
-| 4 | Patient Records Modernization | Gamma Health | February 15, 2025 |
+1. A hold may only be initiated with written agreement from the client sponsor.
+2. Since the project has been on hold since February 15, 2025, it has exceeded 30 days, which triggers a mandatory steering committee review. The committee must decide whether to resume, re-scope, or close the project.
+3. Consultants assigned to this project should have been released to other work within two weeks of February 15, 2025.
 
----
-
-## Governance Requirements for On-Hold Projects
-
-According to **project_governance_policy.txt**, the following requirements apply:
-
-1. **Initiation of Hold**: A project may only be placed on hold with **written agreement from the client sponsor**.
-
-2. **Review Procedure**: Since the Patient Records Modernization project has been on hold since February 15, 2025 (more than 30 days), it **requires a steering committee review** to decide whether to resume, re-scope, or close it.
-
-3. **Resource Management**: Consultants assigned to this project **must be released to other work within two weeks** of the hold being initiated.
-
-> **Note:** The governance policy does not explicitly define a reactivation process beyond the steering committee's decision, nor does it specify communication requirements (e.g., status reports) for on-hold projects.
-[TOKENS] {"component": "routing", "input_tokens": 210, "output_tokens": 42, "cost_usd": 0.00126}
+In summary, this project is overdue for a steering committee review and staff reallocation should already have occurred.
+[TOKENS] {"component": "routing", "input_tokens": 210, "output_tokens": 45, "cost_usd": 0.001305}
 ================================================================================
 Q: What's the weather in London today?
-route: none (expected none)  reason: Weather information is not covered by the firm's database or policy documents.
+route: none (expected none)  reason: Weather information is outside the scope of both the firm database and policy/process documents.
 success: False  tools: {}  sources: []
-calls: ['routing']  token_usage: {'input_tokens': 210, 'output_tokens': 42, 'cost_usd': 0.00126}
+calls: ['routing']  token_usage: {'input_tokens': 210, 'output_tokens': 45, 'cost_usd': 0.001305}
 answer: I can only answer questions about the firm's clients, projects, consultants and invoices, or its onboarding, IT support, billing and project governance policies.
-[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 65, "cost_usd": 0.001689}
-[TOKENS] {"component": "sql_generation", "input_tokens": 336, "output_tokens": 33, "cost_usd": 0.001503}
-[TOKENS] {"component": "sql_interpretation", "input_tokens": 118, "output_tokens": 34, "cost_usd": 0.000864}
+[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 64, "cost_usd": 0.001674}
+[TOKENS] {"component": "sql_generation", "input_tokens": 384, "output_tokens": 31, "cost_usd": 0.001617}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 137, "output_tokens": 34, "cost_usd": 0.000921}
 ================================================================================
 Q: Which of them has the biggest budget?   (follow-up)
-route: sql (expected sql)  reason: This is a factual database query asking for the active project with the largest budget, which requires querying project records.
-success: True  tools: {'sql': True}  sources: ["SELECT id, name, budget\nFROM projects\nWHERE status ILIKE 'active'\nORDER BY budget DESC\nLIMIT 1;"]
-calls: ['routing', 'sql_generation', 'sql_interpretation']  token_usage: {'input_tokens': 692, 'output_tokens': 132, 'cost_usd': 0.004056}
-answer: The active project with the biggest budget is **Fraud Detection System** (Project ID: 3) with a budget of **$220,000**.
+route: sql (expected sql)  reason: The question asks for a ranked or max budget value among the active projects, which is a quantitative database query.
+success: True  tools: {'sql': True}  sources: ["SELECT id, name, budget\nFROM projects\nWHERE status = 'active'\nORDER BY budget DESC\nLIMIT 1;"]
+calls: ['routing', 'sql_generation', 'sql_interpretation']  token_usage: {'input_tokens': 759, 'output_tokens': 129, 'cost_usd': 0.004212}
+answer: The active project with the biggest budget is the **Fraud Detection System** (ID: 3), with a budget of **$220,000**.
 ================================================================================
-routing correct: 6/6   total cost: $0.0509
+routing correct: 6/6   total cost: $0.0424

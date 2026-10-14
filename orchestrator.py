@@ -41,7 +41,7 @@ def route_question(question: str, history: list | None = None) -> tuple[dict, di
 def synthesise(question: str, results: dict, history: list | None) -> tuple[str, dict]:
     parts = "\n\n".join(f"[{n} tool, success={r['success']}]\n{r['answer']}" for n, r in results.items())
     prompt = (
-        f"{_history_block(history)}Combine these tool answers into one concise answer. Use only "
+        f"{_history_block(history)}Combine these tool answers into one concise plain-text answer (under 150 words, no tables or emoji). Use only "
         "facts stated below and keep any source file names. If a tool failed, say what is missing.\n\n"
         f"{parts}\n\nQuestion: {question}"
     )

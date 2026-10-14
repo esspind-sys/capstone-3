@@ -22,11 +22,13 @@ Tables available:
   - status is one of: 'active', 'completed', 'on-hold'
   - budget is in USD
   - client_id references clients.id
+  - start_date is when the project began. No column records when a project went on hold.
 - consultants(id, name, grade, specialisation, project_id, billable_hours)
   - grade is one of: 'Analyst', 'Senior', 'Manager', 'Director'
   - project_id references projects.id
 - invoices(id, project_id, amount, status, due_date, paid_date)
   - status is one of: 'paid', 'pending', 'overdue'
+  - for overdue invoices, filter on status = 'overdue' (status is the system of record)
   - amount is in USD
   - project_id references projects.id
 All dates are in ISO 8601 format (YYYY-MM-DD).
@@ -89,7 +91,7 @@ def interpret_results(question: str, sql: str, result: dict) -> tuple[str, dict]
     prompt = (
         f"Question: {question}\nSQL used: {sql}\nColumns: {result['columns']}\n"
         f"Rows: {result['rows'][:20]}\n\n"
-        "Answer the question concisely using ONLY this data. "
+        "Answer the question concisely using ONLY this data, in plain text: at most 3 sentences or a short bullet list, no tables or emoji. "
         "If there are no rows, say no matching records were found."
     )
     return call_claude(prompt, "sql_interpretation", max_tokens=400)
