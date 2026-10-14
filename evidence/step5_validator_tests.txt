@@ -1,0 +1,20 @@
+================================================================================================
+SQL VALIDATOR TEST SUITE
+================================================================================================
+[PASS] REQ-1 valid SELECT           valid=True  check=passed         | SELECT name, contract_value FROM clients WHERE r
+[PASS] REQ-2 destructive            valid=False check=keyword        | DROP TABLE clients
+[PASS] REQ-3 blocked word in column valid=True  check=passed         | SELECT id, deleted_at FROM projects
+[PASS] REQ-4 stacked + keyword      valid=False check=keyword        | SELECT * FROM projects; DROP TABLE clients;
+[PASS] REQ-5 stacked, no keyword    valid=False check=stacking       | SELECT * FROM clients; SELECT * FROM invoices
+[PASS] delete                       valid=False check=keyword        | DELETE FROM invoices
+[PASS] update                       valid=False check=keyword        | UPDATE projects SET status = 'completed' WHERE s
+[PASS] insert                       valid=False check=keyword        | INSERT INTO invoices (amount) VALUES (100)
+[PASS] mixed case SELECT            valid=True  check=passed         | sElEcT COUNT(*) fRoM projects
+[PASS] newline/tab evasion          valid=False check=keyword        | SELECT 1;\n\tdrop TABLE clients
+[PASS] SELECT INTO (write)          valid=False check=keyword        | SELECT name INTO backup_clients FROM clients
+[PASS] more substring cols          valid=True  check=passed         | SELECT is_deleted, last_updated FROM projects
+[PASS] trailing semicolon           valid=True  check=passed         | SELECT * FROM clients;
+[PASS] CTE allowed                  valid=True  check=passed         | WITH a AS (SELECT * FROM projects WHERE status =
+[PASS] EXPLAIN ANALYZE runs query   valid=False check=statement_type | EXPLAIN ANALYZE SELECT * FROM clients
+================================================================================================
+15/15 passed
