@@ -72,7 +72,7 @@ def run_retrieval_agent(question: str, history: list | None = None) -> dict:
 
     context = "\n\n".join(f"[{c['source']}]\n{c['content']}" for c in relevant)
     prompt = (
-        f"{_history_block(history)}Answer the question using ONLY the document excerpts below. "
+        f"{_history_block(history)}Answer the question concisely using ONLY the document excerpts below. "
         "Name the source file for each fact you use. If the excerpts do not contain the "
         "answer, say that the documents do not cover it.\n\n"
         f"Excerpts:\n{context}\n\nQuestion: {question}"
