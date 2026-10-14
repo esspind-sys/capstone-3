@@ -1,0 +1,80 @@
+REGISTERED TOOLS:
+- sql: The firm database: clients, projects, consultants and invoices. Use for counts, totals, rankings, statuses, dates, budgets and billable hours.
+- retrieval: Firm policy and process documents: onboarding, IT support, invoice and billing policy, project governance. Use for rules, procedures, deadlines and escalation steps.
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 347, "output_tokens": 337, "cost_usd": 0.006096}
+================================================================================
+[retrieval] Q: What is our onboarding process for new consultants?
+standard shape: True  success: True
+reason: OK  top_score: 1.718  min_score: 1.45
+chunks used: [{'source': 'onboarding_process.txt', 'chunk_number': 0, 'score': 1.718}, {'source': 'onboarding_process.txt', 'chunk_number': 1, 'score': 1.696}]
+sources: ['onboarding_process.txt']
+answer: ## New Consultant Onboarding Process
+
+Based on the documentation, here is the structured onboarding process for new consultants:
+
+### Two-Week Programme Structure
+
+**Week 1:**
+- **Day 1:** HR induction, laptop and account setup by IT, security awareness training, and signing the code of conduct and confidentiality agreement
+- **Days 2–3:** Methodology training covering the firm's delivery framework, quality standards, and time-entry rules
+- **Days 4–5:** Shadowing a Senior Consultant or Manager on an active project
+
+*(Source: onboarding_process.txt)*
+
+**Week 2:**
+- Role-specific training by specialisation (e.g., data engineering, analytics, strategy, or healthcare systems)
+- Completion of the independence and conflict-of-interest declaration
+
+*(Source: onboarding_process.txt)*
+
+---
+
+### Key Rules & Milestones
+
+- Consultants must **record billable hours in the time system every working day** *(onboarding_process.txt)*
+- Each new consultant is assigned an **onboarding buddy at Senior grade or above** for their first 90 days *(onboarding_process.txt)*
+- A consultant **cannot be staffed on a billable project** until their line manager has signed off onboarding *(onboarding_process.txt)*
+- HR conducts **progress reviews at 30, 60, and 90 days** *(onboarding_process.txt)*
+token_usage: {'input_tokens': 347, 'output_tokens': 337, 'cost_usd': 0.006096}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 239, "output_tokens": 140, "cost_usd": 0.002817}
+================================================================================
+[retrieval] Q: How quickly must a critical IT ticket be resolved, and who is it escalated to?
+standard shape: True  success: True
+reason: OK  top_score: 1.755  min_score: 1.45
+chunks used: [{'source': 'it_support_policy.txt', 'chunk_number': 0, 'score': 1.755}]
+sources: ['it_support_policy.txt']
+answer: Based on the document excerpt, here are the escalation details for critical IT tickets:
+
+**Resolution Requirement:** Critical tickets must be resolved **within 24 hours** of being opened. [it_support_policy.txt]
+
+**Escalation Process:**
+1. If a critical ticket is **not resolved within 12 hours**, it must be escalated to the **on-call engineering lead**. [it_support_policy.txt]
+2. If a critical ticket **remains unresolved at the 24-hour mark**, it is automatically escalated to the **department director**. [it_support_policy.txt]
+token_usage: {'input_tokens': 239, 'output_tokens': 140, 'cost_usd': 0.002817}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 314, "output_tokens": 56, "cost_usd": 0.001782}
+================================================================================
+[retrieval] Q: What happens when an invoice is 30 days overdue?
+standard shape: True  success: True
+reason: OK  top_score: 1.821  min_score: 1.45
+chunks used: [{'source': 'invoice_billing_policy.txt', 'chunk_number': 0, 'score': 1.821}, {'source': 'invoice_billing_policy.txt', 'chunk_number': 1, 'score': 1.562}]
+sources: ['invoice_billing_policy.txt']
+answer: Based on the document excerpts, when an invoice is **30 days overdue**, it is escalated to the **engagement director**, who may **pause further non-critical work on the project**.
+
+*Source: invoice_billing_policy.txt*
+token_usage: {'input_tokens': 314, 'output_tokens': 56, 'cost_usd': 0.001782}
+================================================================================
+[retrieval] Q: What is the CEO's favourite colour?
+standard shape: True  success: False
+reason: below_threshold  top_score: 1.103  min_score: 1.45
+chunks used: []
+sources: []
+answer: No relevant documents were found for this question.
+token_usage: {'input_tokens': 0, 'output_tokens': 0, 'cost_usd': 0.0}
+[TOKENS] {"component": "sql_generation", "input_tokens": 332, "output_tokens": 17, "cost_usd": 0.001251}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 77, "output_tokens": 14, "cost_usd": 0.000441}
+================================================================================
+[sql] Q: How many consultants are at Manager grade?
+standard shape: True  success: True
+sources: ["SELECT COUNT(*) FROM consultants WHERE grade = 'Manager'"]
+answer: There are **2** consultants at Manager grade.
+token_usage: {'input_tokens': 409, 'output_tokens': 31, 'cost_usd': 0.001692}
