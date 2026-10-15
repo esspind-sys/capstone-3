@@ -1,9 +1,11 @@
+import functools
 import boto3
 import json
 
 bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
 
 
+@functools.lru_cache(maxsize=1)
 def get_model_id() -> str:
     account_id = boto3.client("sts").get_caller_identity()["Account"]
     return f"arn:aws:bedrock:us-east-1:{account_id}:inference-profile/us.anthropic.claude-sonnet-4-6"

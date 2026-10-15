@@ -1,6 +1,7 @@
 """tokenomics_logger.py -- per-call token/cost logging and decision logging."""
 import json
 import os
+import time
 from datetime import datetime, timezone
 from bedrock_client import invoke_claude
 
@@ -39,3 +40,13 @@ def sum_usage(records: list[dict]) -> dict:
     inp = sum(r["input_tokens"] for r in records)
     out = sum(r["output_tokens"] for r in records)
     return {"input_tokens": inp, "output_tokens": out, "cost_usd": token_cost(inp, out)}
+
+
+def run_traced_query(orchestrator, question: str, history: list | None = None) -> dict:
+    """Run one question through the compiled graph and log latency plus token usage."""
+    start = time.perf_counter()
+    state = orchestrator.invoke({"question": question, "history": history})
+    log_decision("trace", question, {"route": state.get("route"), "success": state.get("success"),
+                                      "elapsed_s": round(time.perf_counter() - start, 2),
+                                      "token_usage": state.get("token_usage", {})})
+    return state

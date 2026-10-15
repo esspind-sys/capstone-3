@@ -1,6 +1,8 @@
 """orchestrator.py -- routes each question to sql, retrieval, both or neither, then combines."""
 import json
 import re
+from typing import TypedDict
+from langgraph.graph import StateGraph, END
 from tool_registry import describe_tools, run_tool
 from tokenomics_logger import call_claude, log_decision, sum_usage
 
@@ -57,29 +59,79 @@ def _run_tools(plan: dict, question: str, history: list | None) -> dict:
     return results
 
 
-def answer_question(question: str, history: list | None = None) -> dict:
-    plan, route_usage = route_question(question, history)
-    log_decision("routing", question, plan)
-    results = _run_tools(plan, question, history)
-    calls = [route_usage] + [c for r in results.values() for c in r["metadata"]["calls"]]
+class OrchestratorState(TypedDict, total=False):
+    question: str
+    history: list | None
+    plan: dict
+    route: str
+    results: dict
+    sql_result: dict | None
+    calls: list
+    final_answer: str
+    success: bool
+    token_usage: dict
 
+
+def _route_node(state: OrchestratorState) -> dict:
+    plan, usage = route_question(state["question"], state.get("history"))
+    log_decision("routing", state["question"], plan)
+    return {"plan": plan, "route": plan["route"], "calls": [usage], "results": {}}
+
+
+def _tools_node(state: OrchestratorState) -> dict:
+    results = _run_tools(state["plan"], state["question"], state.get("history"))
+    tool_calls = [c for r in results.values() for c in r["metadata"]["calls"]]
+    return {"results": results, "sql_result": results.get("sql"), "calls": state["calls"] + tool_calls}
+
+
+def _answer_node(state: OrchestratorState) -> dict:
+    results, calls = state["results"], list(state["calls"])
     if not results:
         answer, success = OUT_OF_SCOPE, False
     elif len(results) == 1:
         only = next(iter(results.values()))
         answer, success = only["answer"], only["success"]
     else:
-        answer, syn_usage = synthesise(question, results, history)
+        answer, syn_usage = synthesise(state["question"], results, state.get("history"))
         calls.append(syn_usage)
         success = any(r["success"] for r in results.values())
-
     usage = sum_usage(calls)
-    log_decision("answer", question, {"route": plan["route"], "success": success, "token_usage": usage})
+    log_decision("answer", state["question"], {"route": state["route"], "success": success, "token_usage": usage})
+    return {"final_answer": answer, "success": success, "calls": calls, "token_usage": usage}
+
+
+def _next_after_route(state: OrchestratorState) -> str:
+    return "tools" if ROUTES[state["route"]] else "answer"
+
+
+def build_orchestrator():
+    """LangGraph graph: route -> tools (skipped when out of scope) -> answer."""
+    graph = StateGraph(OrchestratorState)
+    graph.add_node("route", _route_node)
+    graph.add_node("tools", _tools_node)
+    graph.add_node("answer", _answer_node)
+    graph.set_entry_point("route")
+    graph.add_conditional_edges("route", _next_after_route, {"tools": "tools", "answer": "answer"})
+    graph.add_edge("tools", "answer")
+    graph.add_edge("answer", END)
+    return graph.compile()
+
+
+_GRAPH = None
+
+
+def answer_question(question: str, history: list | None = None) -> dict:
+    """Same return shape as before; now runs through the LangGraph graph."""
+    global _GRAPH
+    if _GRAPH is None:
+        _GRAPH = build_orchestrator()
+    s = _GRAPH.invoke({"question": question, "history": history})
+    plan, results = s["plan"], s["results"]
     return {
-        "success": success, "answer": answer,
-        "sources": [s for r in results.values() for s in r["sources"]],
-        "metadata": {"route": plan["route"], "route_reason": plan.get("reason"),
+        "success": s["success"], "answer": s["final_answer"],
+        "sources": [src for r in results.values() for src in r["sources"]],
+        "metadata": {"route": s["route"], "route_reason": plan.get("reason"),
                      "sub_questions": {n: plan.get(f"{n}_question") for n in results},
                      "tool_success": {n: r["success"] for n, r in results.items()},
-                     "token_usage": usage, "calls": calls},
+                     "token_usage": s["token_usage"], "calls": s["calls"]},
     }
