@@ -1,0 +1,55 @@
+
+===== TURN 1 | FunctionError none | handler 200
+route: sql | validation: PASSED
+sql: SELECT COUNT(*) AS active_project_count
+FROM projects p
+JOIN clients c ON p.client_id = c.id
+WHERE c.name ILIKE '%Acme Corp%'
+AND p.status = 'active'
+answer: Acme Corp has **1** active project.
+history turns returned: 1 | total tokens in/out: 806 / 127
+  [TOKENS] routing              in   241  out   57  $0.001578
+  [TOKENS] sql_generation       in   391  out   56  $0.002013
+  [TOKENS] sql_interpretation   in   174  out   14  $0.000732
+['REPORT RequestId: 7e28cf9b-1837-4924-8b51-cb1dbe87e42c\tDuration: 3064.66 ms\tBilled Duration: 6944 ms\tMemory Size: 1024 MB\tMax Memory Used: 216 MB\tInit Duration: 3879.28 ms\t']
+
+===== TURN 2 | FunctionError none | handler 200
+route: sql | validation: PASSED
+sql: SELECT SUM(c.contract_value) AS total_contract_value
+FROM clients c
+WHERE c.name ILIKE 'Acme Corp'
+answer: The total contract value across all projects for Acme Corp is **$250,000**.
+history turns returned: 2 | total tokens in/out: 864 / 123
+  [TOKENS] routing              in   271  out   63  $0.001758
+  [TOKENS] sql_generation       in   429  out   38  $0.001857
+  [TOKENS] sql_interpretation   in   164  out   22  $0.000822
+['REPORT RequestId: ecea7b70-1a3c-4d0e-9bd2-43ffd3d82896\tDuration: 2975.88 ms\tBilled Duration: 2976 ms\tMemory Size: 1024 MB\tMax Memory Used: 216 MB\t']
+
+===== TURN 3 | FunctionError none | handler 200
+route: sql | validation: PASSED
+sql: SELECT COUNT(*) FROM consultants;
+answer: There are **6 consultants** in total.
+history turns returned: 3 | total tokens in/out: 883 / 80
+  [TOKENS] routing              in   305  out   55  $0.00174
+  [TOKENS] sql_generation       in   455  out   11  $0.00153
+  [TOKENS] sql_interpretation   in   123  out   14  $0.000579
+['REPORT RequestId: 53c6fdb3-d886-4a80-9629-df8fe25b225e\tDuration: 2460.07 ms\tBilled Duration: 2461 ms\tMemory Size: 1024 MB\tMax Memory Used: 218 MB\t']
+
+===== BOTH (attributed) | FunctionError none | handler 200
+route: both | validation: PASSED
+sql: SELECT COUNT(*) FROM projects WHERE status ILIKE 'active'
+answer: The SQL agent's database query shows there are 4 active projects.
+
+According to the retrieval agent (onboarding_process.txt), the consultant onboarding policy requires a two-week programme before joining a client engagement. Week 1 covers HR induction, laptop and account setup, security awareness training, code of conduct signing, methodology training, and shadowing a Senior Consultant or Manager. Week 2 includes role-specific training and completion of an independence and conflict-of-interest declaration. Each new consultant is assigned an onboarding buddy at Senior grade or above for their first 90 days. A consultant cannot be staffed on a billable project until their line manager signs off onboarding. HR conducts progress reviews at 30, 60, and 90 days. Billable hours must be recorded in the time system every working day.
+history turns returned: 1 | total tokens in/out: 1571 / 581
+  [TOKENS] routing              in   247  out   73  $0.001836
+  [TOKENS] sql_generation       in   388  out   18  $0.001434
+  [TOKENS] sql_interpretation   in   129  out   15  $0.000612
+  [TOKENS] retrieval_answer     in   346  out  288  $0.005358
+  [TOKENS] synthesis            in   461  out  187  $0.004188
+['REPORT RequestId: 2066078c-d7d8-4f1e-930a-77adab4cdc7f\tDuration: 9772.33 ms\tBilled Duration: 9773 ms\tMemory Size: 1024 MB\tMax Memory Used: 506 MB\t']
+
+=== MEMORY COST (routing + sql_generation input tokens) ===
+TURN 1: 632  (+0 vs turn 1)
+TURN 2: 700  (+68 vs turn 1)
+TURN 3: 760  (+128 vs turn 1)
