@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"answer\": \"There are 4 active projects in the database. No relevant documents were found for the onboarding policy, so that information is unavailable.\", \"route\": \"both\", \"sql_validation\": \"PASSED\", \"token_usage\": {\"input_tokens\": 908, \"output_tokens\": 134, \"cost_usd\": 0.004734}}"}

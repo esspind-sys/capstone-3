@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"answer\": \"There are **4 active projects**.\", \"route\": \"sql\", \"sql_validation\": \"PASSED\", \"token_usage\": {\"input_tokens\": 753, \"output_tokens\": 76, \"cost_usd\": 0.003399}}"}

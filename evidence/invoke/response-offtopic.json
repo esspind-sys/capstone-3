@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"answer\": \"I can only answer questions about the firm's clients, projects, consultants and invoices, or its onboarding, IT support, billing and project governance policies.\", \"route\": \"none\", \"sql_validation\": null, \"token_usage\": {\"input_tokens\": 237, \"output_tokens\": 48, \"cost_usd\": 0.001431}}"}
