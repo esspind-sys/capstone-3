@@ -2,7 +2,12 @@
 onnx_embed.py -- all-MiniLM-L6-v2 embeddings via ONNX Runtime (replaces
 sentence-transformers, whose PyTorch dependency exceeds Lambda's 250MB limit).
 Mean pooling + L2 normalization match sentence-transformers' output.
-Requires model.onnx and tokenizer.json in the same directory as this file.
+
+Model location:
+- Local dev: model.onnx next to this file is used if present.
+- Lambda: model.onnx is too large for the 250 MB package, so it is downloaded
+  once per cold start from s3://$MODEL_S3_BUCKET/$MODEL_S3_KEY into /tmp.
+tokenizer.json is always bundled next to this file.
 """
 import os
 import numpy as np
@@ -10,17 +15,33 @@ import onnxruntime as ort
 from tokenizers import Tokenizer
 
 _MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
-_MODEL_PATH = os.path.join(_MODEL_DIR, "model.onnx")
+_LOCAL_MODEL_PATH = os.path.join(_MODEL_DIR, "model.onnx")
+_TMP_MODEL_PATH = "/tmp/model.onnx"
 _TOKENIZER_PATH = os.path.join(_MODEL_DIR, "tokenizer.json")
 
 _session = None
 _tokenizer = None
 
 
+def _resolve_model_path() -> str:
+    if os.path.exists(_LOCAL_MODEL_PATH):
+        return _LOCAL_MODEL_PATH
+    if not os.path.exists(_TMP_MODEL_PATH):
+        bucket = os.environ.get("MODEL_S3_BUCKET")
+        if not bucket:
+            raise RuntimeError("model.onnx is not bundled and MODEL_S3_BUCKET is not set")
+        key = os.environ.get("MODEL_S3_KEY", "models/model.onnx")
+        import boto3  # provided by the Lambda runtime; only needed on this path
+        partial = _TMP_MODEL_PATH + ".part"  # avoids a half-written model if the download dies
+        boto3.client("s3").download_file(bucket, key, partial)
+        os.replace(partial, _TMP_MODEL_PATH)
+    return _TMP_MODEL_PATH
+
+
 def _get_session():
     global _session
     if _session is None:
-        _session = ort.InferenceSession(_MODEL_PATH, providers=["CPUExecutionProvider"])
+        _session = ort.InferenceSession(_resolve_model_path(), providers=["CPUExecutionProvider"])
     return _session
 
 
@@ -59,7 +80,7 @@ def get_embedding(text: str) -> list[float]:
 
     sentence_embedding = _mean_pooling(token_embeddings, attention_mask)
 
-    # L2-normalize: required for this model (see module docstring).
+    # L2-normalize: required because the OpenSearch index uses innerproduct.
     norm = np.linalg.norm(sentence_embedding, axis=1, keepdims=True)
     sentence_embedding = sentence_embedding / norm
 
