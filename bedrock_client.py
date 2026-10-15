@@ -11,12 +11,14 @@ def get_model_id() -> str:
     return f"arn:aws:bedrock:us-east-1:{account_id}:inference-profile/us.anthropic.claude-sonnet-4-6"
 
 
-def invoke_claude(prompt: str, max_tokens: int = 500) -> dict:
+def invoke_claude(prompt: str, max_tokens: int = 500, temperature: float | None = None) -> dict:
     body = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": max_tokens,
         "messages": [{"role": "user", "content": prompt}],
     }
+    if temperature is not None:
+        body["temperature"] = temperature
     response = bedrock.invoke_model(modelId=get_model_id(), body=json.dumps(body))
     result = json.loads(response["body"].read())
     return {

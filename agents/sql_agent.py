@@ -55,7 +55,7 @@ def generate_sql(question: str, history: list | None = None) -> tuple[str, dict]
         f"If these tables cannot answer the question, return exactly {CANNOT_ANSWER}. "
         "Return ONLY the SQL query. No explanation, no markdown, no backticks."
     )
-    text, usage = call_claude(prompt, "sql_generation", max_tokens=512)
+    text, usage = call_claude(prompt, "sql_generation", max_tokens=512, temperature=0)
     return _FENCE_RE.sub("", text.strip()).strip(), usage
 
 

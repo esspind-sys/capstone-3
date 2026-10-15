@@ -1,0 +1,36 @@
+[TOKENS] {"component": "routing", "input_tokens": 302, "output_tokens": 59, "cost_usd": 0.001791}
+[LOG] routing: {"route": "sql", "reason": "Total contract value is a numeric aggregate from the database, not a policy question.", "sql_question": "What is the total contract value of all projects for Acme Corp?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 486, "output_tokens": 28, "cost_usd": 0.001878}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 152, "output_tokens": 19, "cost_usd": 0.000741}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 940, "output_tokens": 106, "cost_usd": 0.00441}}
+=== TURN 2, run 1 | route sql
+temperatures sent (call order): [0, 0, 'default']
+answer: The total contract value for Acme Corp is **$250,000**.
+[TOKENS] {"component": "routing", "input_tokens": 302, "output_tokens": 59, "cost_usd": 0.001791}
+[LOG] routing: {"route": "sql", "reason": "Total contract value is a numeric aggregate from the database, not a policy question.", "sql_question": "What is the total contract value of all projects for Acme Corp?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 486, "output_tokens": 28, "cost_usd": 0.001878}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 152, "output_tokens": 19, "cost_usd": 0.000741}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 940, "output_tokens": 106, "cost_usd": 0.00441}}
+=== TURN 2, run 2 | route sql
+temperatures sent (call order): [0, 0, 'default']
+answer: The total contract value for Acme Corp is **$250,000**.
+[TOKENS] {"component": "routing", "input_tokens": 302, "output_tokens": 59, "cost_usd": 0.001791}
+[LOG] routing: {"route": "sql", "reason": "Total contract value is a numeric aggregate from the database, not a policy question.", "sql_question": "What is the total contract value of all projects for Acme Corp?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 486, "output_tokens": 28, "cost_usd": 0.001878}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 152, "output_tokens": 19, "cost_usd": 0.000741}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 940, "output_tokens": 106, "cost_usd": 0.00441}}
+=== TURN 2, run 3 | route sql
+temperatures sent (call order): [0, 0, 'default']
+answer: The total contract value for Acme Corp is **$250,000**.
+[TOKENS] {"component": "routing", "input_tokens": 278, "output_tokens": 68, "cost_usd": 0.001854}
+[LOG] routing: {"route": "both", "reason": "The question asks for a count of active projects (database fact) and the onboarding process (policy document).", "sql_question": "How many active projects do we have?", "retrieval_question": "What is our onboarding process?"}
+[TOKENS] {"component": "sql_generation", "input_tokens": 445, "output_tokens": 16, "cost_usd": 0.001575}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 127, "output_tokens": 11, "cost_usd": 0.000546}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 346, "output_tokens": 275, "cost_usd": 0.005163}
+[TOKENS] {"component": "synthesis", "input_tokens": 444, "output_tokens": 215, "cost_usd": 0.004557}
+[LOG] answer: {"route": "both", "success": true, "token_usage": {"input_tokens": 1640, "output_tokens": 585, "cost_usd": 0.013695}}
+=== BOTH | route both
+temperatures sent (call order): [0, 0, 'default', 'default', 'default']
+answer: The SQL agent's database query shows there are 4 active projects.
+
+According to the retrieval agent (onboarding_process.txt), onboarding follows a structured tw

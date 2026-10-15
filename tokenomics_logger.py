@@ -26,9 +26,10 @@ def log_decision(stage: str, question: str, details: dict) -> None:
         f.write(json.dumps(entry, default=str) + "\n")
 
 
-def call_claude(prompt: str, component: str, max_tokens: int = 500) -> tuple[str, dict]:
+def call_claude(prompt: str, component: str, max_tokens: int = 500,
+                temperature: float | None = None) -> tuple[str, dict]:
     """Every Claude call goes through here so each one is logged with its cost."""
-    r = invoke_claude(prompt, max_tokens)
+    r = invoke_claude(prompt, max_tokens, temperature)
     record = {"component": component, "input_tokens": r["input_tokens"],
               "output_tokens": r["output_tokens"],
               "cost_usd": token_cost(r["input_tokens"], r["output_tokens"])}

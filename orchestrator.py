@@ -35,7 +35,7 @@ def route_question(question: str, history: list | None = None) -> tuple[dict, di
         '"sql_question": "... or null", "retrieval_question": "... or null"}\n\n'
         f"Question: {question}"
     )
-    text, usage = call_claude(prompt, "routing", max_tokens=200)
+    text, usage = call_claude(prompt, "routing", max_tokens=200, temperature=0)
     try:
         plan = json.loads(_JSON_RE.search(text).group(0))
         if plan.get("route") not in ROUTES:
