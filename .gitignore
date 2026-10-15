@@ -6,3 +6,5 @@ model/*.onnx
 package/
 agent_decisions.jsonl
 *.onnx
+build/
+lambda.zip

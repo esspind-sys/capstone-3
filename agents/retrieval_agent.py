@@ -12,9 +12,10 @@ load_dotenv(os.path.join(_ROOT, ".env"), override=True)  # no-op on Lambda
 
 INDEX = "documents"
 TOP_K = 3
-# innerproduct scores = 1 + similarity. In check_opensearch, relevant top hits
-# scored 1.52-1.79 and off-topic chunks 1.30-1.43.
-MIN_SCORE = 1.45
+# innerproduct scores = 1 + similarity. Re-probed on AWS: on-topic questions' top hit
+# scored 1.43-1.61, unrelated questions 0.98-1.06.
+MIN_SCORE = 1.25  # question gate: is the best hit relevant at all?
+MAX_GAP = 0.10    # chunk filter: keep only chunks close to the best hit
 
 _client = None
 
@@ -65,7 +66,8 @@ def run_retrieval_agent(question: str, history: list | None = None) -> dict:
         return _result(False, f"Document search failed: {e}", [], None, [], "search_error")
 
     top_score = hits[0]["score"] if hits else None
-    relevant = [h for h in hits if h["score"] >= MIN_SCORE]
+    relevant = [h for h in hits
+                if top_score >= MIN_SCORE and h["score"] >= top_score - MAX_GAP]
     if not relevant:  # no Claude call -> zero cost for off-topic questions
         return _result(False, "No relevant documents were found for this question.",
                        [], top_score, [], "below_threshold")
