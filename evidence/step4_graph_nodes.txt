@@ -1,0 +1,74 @@
+NODES: ['__start__', 'route', 'sql_agent', 'retrieval_agent', 'answer', '__end__']
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	route(route)
+	sql_agent(sql_agent)
+	retrieval_agent(retrieval_agent)
+	answer(answer)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> route;
+	retrieval_agent --> answer;
+	route -.-> answer;
+	route -.-> retrieval_agent;
+	route -.-> sql_agent;
+	sql_agent -.-> answer;
+	sql_agent -.-> retrieval_agent;
+	answer --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+
+[TOKENS] {"component": "routing", "input_tokens": 269, "output_tokens": 52, "cost_usd": 0.001587}
+[LOG] routing: {"route": "sql", "reason": "This is a straightforward count of active projects, which is a database query.", "sql_question": "How many active projects do we have?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 18, "cost_usd": 0.001434}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 129, "output_tokens": 15, "cost_usd": 0.000612}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 786, "output_tokens": 85, "cost_usd": 0.003633}}
+
+=== expected sql: How many active projects do we have?
+route: sql | path: route -> sql_agent -> answer
+validation: PASSED
+answer: There are **4 active projects** in the database.
+tokens: {'input_tokens': 786, 'output_tokens': 85, 'cost_usd': 0.003633}
+[TOKENS] {"component": "routing", "input_tokens": 270, "output_tokens": 66, "cost_usd": 0.0018}
+[LOG] routing: {"route": "retrieval", "reason": "This is a procedural how-to question about IT support processes, which is covered by firm policy and process documents, not the database.", "sql_question": null, "retrieval_question": "How do I log an IT support issue?"}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 233, "output_tokens": 54, "cost_usd": 0.001509}
+[LOG] answer: {"route": "retrieval", "success": true, "token_usage": {"input_tokens": 503, "output_tokens": 120, "cost_usd": 0.003309}}
+
+=== expected retrieval: How do I log an IT support issue?
+route: retrieval | path: route -> retrieval_agent -> answer
+validation: n/a (sql_agent not run)
+answer: Based on the document excerpt, you must log IT support issues as a **ticket in the service desk portal**. Requests submitted by email or chat are not tracked and should not be used.
+
+*(Source: it_support_policy.txt)*
+tokens: {'input_tokens': 503, 'output_tokens': 120, 'cost_usd': 0.003309}
+[TOKENS] {"component": "routing", "input_tokens": 278, "output_tokens": 68, "cost_usd": 0.001854}
+[LOG] routing: {"route": "both", "reason": "The question asks for a count of active projects (database fact) and the onboarding process (policy document).", "sql_question": "How many active projects do we have?", "retrieval_question": "What is our onboarding process?"}
+[TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 18, "cost_usd": 0.001434}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 129, "output_tokens": 15, "cost_usd": 0.000612}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 346, "output_tokens": 275, "cost_usd": 0.005163}
+[TOKENS] {"component": "synthesis", "input_tokens": 448, "output_tokens": 214, "cost_usd": 0.004554}
+[LOG] answer: {"route": "both", "success": true, "token_usage": {"input_tokens": 1589, "output_tokens": 590, "cost_usd": 0.013617}}
+
+=== expected both: How many active projects do we have, and what is our onboarding process?
+route: both | path: route -> sql_agent -> retrieval_agent -> answer
+validation: PASSED
+answer: The SQL agent's database query shows there are 4 active projects in the database.
+
+According to the retrieval agent (onboarding_process.txt), onboarding is a structured two-week programme that must be completed before joining a client engagement. Week 1 covers an HR induction, laptop and account setup, security awareness training, signing the code of conduct and confidentiality agreement, methodology training, and shadowing a Senior Consultant or Manager. Week 2 includes role-specific training by specialisation and completion of the independence and conflict-of-interest declaration.
+
+The retrieval agent (onboarding_process.txt) also notes that each new consultant is assigned an onboarding buddy (Senior grade or above) for their first 90 days, billable hours must be recorded every working day, a consultant cannot be staffed on a billable project until their line manager signs off onboarding, and HR reviews progress at 30, 60, and 90 days.
+tokens: {'input_tokens': 1589, 'output_tokens': 590, 'cost_usd': 0.013617}
+[TOKENS] {"component": "routing", "input_tokens": 269, "output_tokens": 49, "cost_usd": 0.001542}
+[LOG] routing: {"route": "none", "reason": "This question is unrelated to firm data, client/project records, or any policy and process documentation.", "sql_question": null, "retrieval_question": null}
+[LOG] answer: {"route": "none", "success": false, "token_usage": {"input_tokens": 269, "output_tokens": 49, "cost_usd": 0.001542}}
+
+=== expected none: What is our CEO's favourite colour?
+route: none | path: route -> answer
+validation: n/a (sql_agent not run)
+answer: I can only answer questions about the firm's clients, projects, consultants and invoices, or its onboarding, IT support, billing and project governance policies.
+tokens: {'input_tokens': 269, 'output_tokens': 49, 'cost_usd': 0.001542}

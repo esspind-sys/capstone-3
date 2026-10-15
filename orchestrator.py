@@ -55,16 +55,16 @@ def synthesise(question: str, results: dict, history: list | None) -> tuple[str,
     return call_claude(prompt, "synthesis", max_tokens=500)
 
 
-def _run_tools(plan: dict, question: str, history: list | None) -> dict:
-    results = {}
-    for name in ROUTES[plan["route"]]:
-        sub = plan.get(f"{name}_question")
-        # Standalone sub-questions need no history; the fallback path keeps it.
-        # SQL generation always gets capped history so follow-ups keep their filters.
-        # Retrieval gets it only on fallback, since it prepends history[-1] to the search text.
-        hist = history[-MAX_HISTORY_TURNS:] if history else None
-        results[name] = run_tool(name, sub or question, hist if (name == "sql" or not sub) else None)
-    return results
+def _run_agent(name: str, state: "OrchestratorState") -> dict:
+    """Run one tool and merge its result into state. Each graph node wraps exactly one tool."""
+    sub = state["plan"].get(f"{name}_question")
+    history = state.get("history")
+    # SQL generation always gets capped history so follow-ups keep their filters.
+    # Retrieval gets it only on fallback, since it prepends history[-1] to the search text.
+    hist = history[-MAX_HISTORY_TURNS:] if history else None
+    result = run_tool(name, sub or state["question"], hist if (name == "sql" or not sub) else None)
+    return {"results": {**state["results"], name: result}, f"{name}_result": result,
+            "calls": state["calls"] + result["metadata"]["calls"]}
 
 
 class OrchestratorState(TypedDict, total=False):
@@ -74,6 +74,7 @@ class OrchestratorState(TypedDict, total=False):
     route: str
     results: dict
     sql_result: dict | None
+    retrieval_result: dict | None
     calls: list
     final_answer: str
     success: bool
@@ -86,10 +87,12 @@ def _route_node(state: OrchestratorState) -> dict:
     return {"plan": plan, "route": plan["route"], "calls": [usage], "results": {}}
 
 
-def _tools_node(state: OrchestratorState) -> dict:
-    results = _run_tools(state["plan"], state["question"], state.get("history"))
-    tool_calls = [c for r in results.values() for c in r["metadata"]["calls"]]
-    return {"results": results, "sql_result": results.get("sql"), "calls": state["calls"] + tool_calls}
+def _sql_agent_node(state: OrchestratorState) -> dict:
+    return _run_agent("sql", state)
+
+
+def _retrieval_agent_node(state: OrchestratorState) -> dict:
+    return _run_agent("retrieval", state)
 
 
 def _answer_node(state: OrchestratorState) -> dict:
@@ -109,18 +112,31 @@ def _answer_node(state: OrchestratorState) -> dict:
 
 
 def _next_after_route(state: OrchestratorState) -> str:
-    return "tools" if ROUTES[state["route"]] else "answer"
+    tools = ROUTES[state["route"]]
+    if "sql" in tools:
+        return "sql_agent"
+    return "retrieval_agent" if "retrieval" in tools else "answer"
+
+
+def _next_after_sql(state: OrchestratorState) -> str:
+    return "retrieval_agent" if "retrieval" in ROUTES[state["route"]] else "answer"
 
 
 def build_orchestrator():
-    """LangGraph graph: route -> tools (skipped when out of scope) -> answer."""
+    """LangGraph graph, one node per tool:
+    route -> sql_agent -> (retrieval_agent if route is "both") -> answer
+    route -> retrieval_agent -> answer;  route -> answer when out of scope."""
     graph = StateGraph(OrchestratorState)
     graph.add_node("route", _route_node)
-    graph.add_node("tools", _tools_node)
+    graph.add_node("sql_agent", _sql_agent_node)
+    graph.add_node("retrieval_agent", _retrieval_agent_node)
     graph.add_node("answer", _answer_node)
     graph.set_entry_point("route")
-    graph.add_conditional_edges("route", _next_after_route, {"tools": "tools", "answer": "answer"})
-    graph.add_edge("tools", "answer")
+    graph.add_conditional_edges("route", _next_after_route,
+                                {"sql_agent": "sql_agent", "retrieval_agent": "retrieval_agent", "answer": "answer"})
+    graph.add_conditional_edges("sql_agent", _next_after_sql,
+                                {"retrieval_agent": "retrieval_agent", "answer": "answer"})
+    graph.add_edge("retrieval_agent", "answer")
     graph.add_edge("answer", END)
     return graph.compile()
 

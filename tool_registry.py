@@ -9,13 +9,15 @@ TOOLS = {
     "sql": {
         "function": run_sql_agent,
         "description": "The firm database: clients, projects, consultants and invoices. Use for "
-                       "counts, totals, rankings, statuses, dates, budgets and billable hours.",
+                       "counts, totals, rankings, statuses, dates, budgets and billable hours. "
+                       "Not for policies, procedures, rules or how-to questions.",
     },
     "retrieval": {
         "function": run_retrieval_agent,
         "description": "Firm policy and process documents: onboarding, IT support, invoice and "
                        "billing policy, project governance. Use for rules, procedures, deadlines "
-                       "and escalation steps.",
+                       "and escalation steps. Not for counts, totals or any specific client, "
+                       "project, consultant or invoice figure.",
     },
 }
 

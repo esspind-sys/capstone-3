@@ -1,0 +1,5 @@
+[TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 18, "cost_usd": 0.001434}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 129, "output_tokens": 15, "cost_usd": 0.000612}
+run_sql_agent: ['answer', 'metadata', 'sources', 'success'] -> matches shared interface: True
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 346, "output_tokens": 274, "cost_usd": 0.005148}
+run_retrieval_agent: ['answer', 'metadata', 'sources', 'success'] -> matches shared interface: True
