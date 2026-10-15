@@ -42,7 +42,7 @@ def synthesise(question: str, results: dict, history: list | None) -> tuple[str,
     parts = "\n\n".join(f"[{n} tool, success={r['success']}]\n{r['answer']}" for n, r in results.items())
     prompt = (
         f"{_history_block(history)}Combine these tool answers into one concise plain-text answer (under 150 words, no tables or emoji). Use only "
-        "facts stated below and keep any source file names. If a tool failed, say what is missing.\n\n"
+        "facts stated below and keep any source file names. If a tool failed, say what is missing. Do not add conclusions, durations or dates the answers do not state; a project start date is not the date it went on hold.\n\n"
         f"{parts}\n\nQuestion: {question}"
     )
     return call_claude(prompt, "synthesis", max_tokens=500)
