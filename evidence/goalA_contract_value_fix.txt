@@ -1,0 +1,20 @@
+[LOG] routing: {"route": "sql", "reason": "The question asks for a numeric total (contract value) for a specific client, which is a database fact.", "sql_question": "What is the total contract value of all projects for Acme Corp?", "retrieval_question": null}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 940, "output_tokens": 112, "cost_usd": 0.0045}}
+=== TURN 2, run 1
+sql: ['SELECT', 'c.contract_value', 'FROM', 'clients', 'c', 'WHERE', 'c.name', 'ILIKE', "'Acme", "Corp'"]
+answer: The total contract value for Acme Corp is **$250,000**.
+[LOG] routing: {"route": "sql", "reason": "The question asks for a database figure (total contract value) for a specific client, resolvable from prior context.", "sql_question": "What is the total contract value of all projects for Acme Corp?", "retrieval_question": null}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 940, "output_tokens": 114, "cost_usd": 0.00453}}
+=== TURN 2, run 2
+sql: ['SELECT', 'c.contract_value', 'FROM', 'clients', 'c', 'WHERE', 'c.name', 'ILIKE', "'Acme", "Corp'"]
+answer: The total contract value for Acme Corp is **$250,000**.
+[LOG] routing: {"route": "sql", "reason": "The question asks for a numeric total (contract value) for a specific client, which is a database fact.", "sql_question": "What is the total contract value of all projects for Acme Corp?", "retrieval_question": null}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 940, "output_tokens": 112, "cost_usd": 0.0045}}
+=== TURN 2, run 3
+sql: ['SELECT', 'c.contract_value', 'FROM', 'clients', 'c', 'WHERE', 'c.name', 'ILIKE', "'Acme", "Corp'"]
+answer: The total contract value for Acme Corp is **$250,000**.
+[LOG] routing: {"route": "sql", "reason": "The question asks for a numerical total of budget figures tied to a specific client, which is stored in the database.", "sql_question": "What is the total budget across Acme Corp's projects?", "retrieval_question": null}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 894, "output_tokens": 134, "cost_usd": 0.004692}}
+=== BUDGET CHECK
+sql: SELECT SUM(p.budget) AS total_budget FROM projects p JOIN clients c ON p.client_id = c.id WHERE c.name ILIKE '%Acme Corp%'
+answer: The total budget across all of Acme Corp's projects is **$240,000**.

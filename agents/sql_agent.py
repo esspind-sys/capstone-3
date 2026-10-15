@@ -17,10 +17,12 @@ SCHEMA_CONTEXT = """
 Tables available:
 - clients(id, name, industry, region, contract_value, created_date)
   - region is one of: 'North', 'South', 'East', 'West'
-  - contract_value is in USD
+  - contract_value is in USD. It is the client's total contract value, one value per client.
+    "Contract value" always means clients.contract_value.
 - projects(id, client_id, name, status, start_date, end_date, budget)
   - status is one of: 'active', 'completed', 'on-hold'
-  - budget is in USD
+  - budget is in USD. It is a per-project budget, not a contract value.
+    Never sum budgets to answer a contract-value question.
   - client_id references clients.id
   - start_date is when the project began. No column records when a project went on hold.
 - consultants(id, name, grade, specialisation, project_id, billable_hours)
