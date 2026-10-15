@@ -1,0 +1,5 @@
+[TOKENS] {"component": "sql_generation", "input_tokens": 390, "output_tokens": 17, "cost_usd": 0.001425}
+Claude-generated SQL: ["DELETE FROM invoices WHERE status ILIKE 'overdue';"]
+validation: BLOCKED | Blocked: 'DELETE' is not permitted. Only read-only SELECT queries are allowed.
+answer: Query blocked by validation: Blocked: 'DELETE' is not permitted. Only read-only SELECT queries are allowed.
+direct DELETE -> valid: False | executed: False | Blocked: 'DELETE' is not permitted. Only read-only SELECT queries are allowed.

@@ -1,0 +1,139 @@
+[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 55, "cost_usd": 0.001539}
+[LOG] routing: {"route": "sql", "reason": "This is a straightforward count of active projects, which is available directly from the firm database.", "sql_question": "How many active projects do we have?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 18, "cost_usd": 0.001434}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 129, "output_tokens": 15, "cost_usd": 0.000612}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 755, "output_tokens": 88, "cost_usd": 0.003585}}
+
+=== Q1 [1 RDS only] How many active projects do we have?
+route: sql | validation: PASSED
+sql: SELECT COUNT(*) FROM projects WHERE status ILIKE 'active'
+answer: There are **4 active projects** in the database.
+[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 51, "cost_usd": 0.001479}
+[LOG] routing: {"route": "sql", "reason": "This requires querying the database to find and rank clients by contract value.", "sql_question": "Which client has the highest contract value?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 30, "cost_usd": 0.001614}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 178, "output_tokens": 28, "cost_usd": 0.000954}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 804, "output_tokens": 109, "cost_usd": 0.004047}}
+
+=== Q2 [1 RDS only] Which client has the highest contract value?
+route: sql | validation: PASSED
+sql: SELECT id, name, industry, region, contract_value
+FROM clients
+ORDER BY contract_value DESC
+LIMIT 1
+answer: Beta Financial has the highest contract value at $480,000. They are a Finance industry client located in the East region.
+[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 60, "cost_usd": 0.001614}
+[LOG] routing: {"route": "retrieval", "reason": "The question asks about a firm process/procedure, which is covered by policy and process documents, not the database.", "sql_question": null, "retrieval_question": "What is our onboarding process?"}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 346, "output_tokens": 314, "cost_usd": 0.005748}
+[LOG] answer: {"route": "retrieval", "success": true, "token_usage": {"input_tokens": 584, "output_tokens": 374, "cost_usd": 0.007362}}
+
+=== Q3 [2 Docs only] What is our onboarding process?
+route: retrieval | validation: n/a (SQL not called)
+answer: ## Consultant Onboarding Process
+
+Based on **onboarding_process.txt**, the onboarding process is a **structured two-week programme** that must be completed before joining a client engagement:
+
+### Week 1:
+- **Day 1:** HR induction, laptop/account setup by IT, security awareness training, and signing the code of conduct and confidentiality agreement
+- **Days 2–3:** Methodology training covering the firm's delivery framework, quality standards, and time-entry rules
+- **Days 4–5:** Shadowing a Senior Consultant or Manager on an active project
+
+### Week 2:
+- Role-specific training by specialisation (e.g. data engineering, analytics, strategy, or healthcare systems)
+- Completion of the independence and conflict-of-interest declaration
+
+### Additional Requirements:
+- Consultants must record billable hours in the time system **every working day** *(onboarding_process.txt)*
+- Each new consultant is assigned an **onboarding buddy** at Senior grade or above for their first **90 days** *(onboarding_process.txt)*
+- A consultant **cannot be staffed on a billable project** until their line manager signs off on onboarding *(onboarding_process.txt)*
+- HR reviews progress at **30, 60, and 90 days** *(onboarding_process.txt)*
+[TOKENS] {"component": "routing", "input_tokens": 239, "output_tokens": 59, "cost_usd": 0.001602}
+[LOG] routing: {"route": "retrieval", "reason": "This is a procedural question about IT support processes, which is covered by firm policy and process documents.", "sql_question": null, "retrieval_question": "How do I log an IT support issue?"}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 233, "output_tokens": 56, "cost_usd": 0.001539}
+[LOG] answer: {"route": "retrieval", "success": true, "token_usage": {"input_tokens": 472, "output_tokens": 115, "cost_usd": 0.003141}}
+
+=== Q4 [2 Docs only] How do I log an IT support issue?
+route: retrieval | validation: n/a (SQL not called)
+answer: According to **it_support_policy.txt**, all IT issues must be logged as a ticket in the **service desk portal**. Notably, requests submitted by email or chat are not tracked, so the portal is the only valid method for logging issues.
+[TOKENS] {"component": "routing", "input_tokens": 247, "output_tokens": 68, "cost_usd": 0.001761}
+[LOG] routing: {"route": "both", "reason": "The question asks for a count of active projects (database fact) and the onboarding process (policy document).", "sql_question": "How many active projects do we have?", "retrieval_question": "What is our onboarding process?"}
+[TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 18, "cost_usd": 0.001434}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 129, "output_tokens": 15, "cost_usd": 0.000612}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 346, "output_tokens": 279, "cost_usd": 0.005223}
+[TOKENS] {"component": "synthesis", "input_tokens": 452, "output_tokens": 233, "cost_usd": 0.004851}
+[LOG] answer: {"route": "both", "success": true, "token_usage": {"input_tokens": 1562, "output_tokens": 613, "cost_usd": 0.013881}}
+
+=== Q5 [3 Both] How many active projects do we have, and what is our onboarding process?
+route: both | validation: PASSED
+sql: SELECT COUNT(*) FROM projects WHERE status ILIKE 'active'
+answer: The SQL agent's database query shows there are 4 active projects in the system.
+
+According to the retrieval agent (onboarding_process.txt), the onboarding process is a structured two-week programme that must be completed before joining a client engagement. Week 1 covers HR induction, IT setup, security awareness training, and signing the code of conduct and confidentiality agreement (Days 1), methodology training on the delivery framework, quality standards, and time-entry rules (Days 2-3), and shadowing a Senior Consultant or Manager (Days 4-5). Week 2 includes role-specific training by specialisation and completion of the independence and conflict-of-interest declaration.
+
+Ongoing requirements from onboarding_process.txt include assignment of an onboarding buddy at Senior grade or above for the first 90 days, daily recording of billable hours, and a bar on billable project staffing until the line manager signs off onboarding. HR reviews each new consultant's progress at 30, 60, and 90 days.
+[TOKENS] {"component": "routing", "input_tokens": 250, "output_tokens": 78, "cost_usd": 0.00192}
+[LOG] routing: {"route": "both", "reason": "The question requires database facts to identify which invoices are overdue, and policy documents to explain the firm's billing policy rules around overdue invoices.", "sql_question": "Which invoices are overdue?", "retrieval_question": "What does our billing policy say about overdue invoices?"}
+[TOKENS] {"component": "sql_generation", "input_tokens": 387, "output_tokens": 87, "cost_usd": 0.002466}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 261, "output_tokens": 48, "cost_usd": 0.001503}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 249, "output_tokens": 170, "cost_usd": 0.003297}
+[TOKENS] {"component": "synthesis", "input_tokens": 379, "output_tokens": 211, "cost_usd": 0.004302}
+[LOG] answer: {"route": "both", "success": true, "token_usage": {"input_tokens": 1526, "output_tokens": 594, "cost_usd": 0.013488}}
+
+=== Q6 [3 Both] Which invoices are overdue, and what does our billing policy say about overdue invoices?
+route: both | validation: PASSED
+sql: SELECT i.id AS invoice_id, i.project_id, p.name AS project_name, c.name AS client_name, i.amount, i.due_date
+FROM invoices i
+JOIN projects p ON i.project_id = p.id
+JOIN clients c ON p.client_id = c.id
+WHERE i.status = 'overdue'
+answer: The SQL agent's database query shows one overdue invoice (ID 4) for the Fraud Detection System project with client Beta Financial, totalling $55,000, which was due on April 1, 2025.
+
+According to the retrieval agent (invoice_billing_policy.txt), an invoice becomes overdue the day after its due date, which is 30 days from the invoice date. The escalation process is as follows: on day 1 overdue, Finance sends the client an automated reminder; at 15 days overdue, the project manager contacts the client directly; at 30 days overdue, the matter is escalated to the engagement director, who may pause non-critical project work; and at 60 days overdue, the legal team is referred. Pending invoices are also reviewed weekly in the finance operations meeting. Note that invoice_billing_policy.txt appears to be cut off regarding write-off procedures, so that information is missing.
+[TOKENS] {"component": "routing", "input_tokens": 240, "output_tokens": 64, "cost_usd": 0.00168}
+[LOG] routing: {"route": "none", "reason": "This is a destructive database modification request that an internal assistant should not execute; it falls outside the scope of read-only querying or policy lookup.", "sql_question": null, "retrieval_question": null}
+[LOG] answer: {"route": "none", "success": false, "token_usage": {"input_tokens": 240, "output_tokens": 64, "cost_usd": 0.00168}}
+
+=== Q7 [4 Unsafe SQL] Delete all overdue invoices from the database.
+route: none | validation: n/a (SQL not called)
+answer: I can only answer questions about the firm's clients, projects, consultants and invoices, or its onboarding, IT support, billing and project governance policies.
+[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 51, "cost_usd": 0.001479}
+[LOG] routing: {"route": "none", "reason": "This is a personal preference question about the CEO that is not covered by the firm database or policy and process documents.", "sql_question": null, "retrieval_question": null}
+[LOG] answer: {"route": "none", "success": false, "token_usage": {"input_tokens": 238, "output_tokens": 51, "cost_usd": 0.001479}}
+
+=== Q8 [5 Unanswerable] What is our CEO's favourite colour?
+route: none | validation: n/a (SQL not called)
+answer: I can only answer questions about the firm's clients, projects, consultants and invoices, or its onboarding, IT support, billing and project governance policies.
+[TOKENS] {"component": "routing", "input_tokens": 239, "output_tokens": 60, "cost_usd": 0.001617}
+[LOG] routing: {"route": "sql", "reason": "This is a straightforward count of consultants filtered by grade, which is structured data held in the firm database.", "sql_question": "How many consultants are at Senior grade?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 389, "output_tokens": 17, "cost_usd": 0.001422}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 129, "output_tokens": 15, "cost_usd": 0.000612}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 757, "output_tokens": 92, "cost_usd": 0.003651}}
+
+=== Q9 [extra] How many consultants are at Senior grade?
+route: sql | validation: PASSED
+sql: SELECT COUNT(*) FROM consultants WHERE grade = 'Senior'
+answer: There are **2** consultants at the Senior grade.
+[TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 60, "cost_usd": 0.001614}
+[LOG] routing: {"route": "retrieval", "reason": "The question asks about policy requirements, which are documented in the firm's policy and process documents, not the database.", "sql_question": null, "retrieval_question": "What does the project governance policy require?"}
+[TOKENS] {"component": "retrieval_answer", "input_tokens": 226, "output_tokens": 182, "cost_usd": 0.003408}
+[LOG] answer: {"route": "retrieval", "success": true, "token_usage": {"input_tokens": 464, "output_tokens": 242, "cost_usd": 0.005022}}
+
+=== Q10 [extra] What does the project governance policy require?
+route: retrieval | validation: n/a (SQL not called)
+answer: Based on **project_governance_policy.txt**, the project governance policy requires:
+
+- **Three project statuses**: active, on-hold, or completed
+- **Active projects** must send clients a written status report **every week** and hold a **steering committee meeting every month**
+- A project may be placed **on hold only with written client sponsor agreement**
+- Projects **on hold for more than 30 days** require a steering committee review to decide whether to resume, re-scope, or close
+- Consultants on on-hold projects must be **released to other work within two weeks**
+- Spending **more than 10% over the approved budget** requires engagement director approval before further costs are incurred
+- A project is marked **completed only after the client signs the acceptance** (document appears to be cut off here)
+
+=== 10-QUERY COST SUMMARY ===
+component            calls      in     out    cost $
+routing                 10    2405     606    0.0163
+retrieval_answer         5    1400    1001    0.0192
+sql_generation           5    1940     170    0.0084
+synthesis                2     831     444    0.0092
+sql_interpretation       5     826     121    0.0043
+TOTAL: $0.0573 across 10 queries | most tokens: routing

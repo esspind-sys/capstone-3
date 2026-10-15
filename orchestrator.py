@@ -12,10 +12,15 @@ OUT_OF_SCOPE = ("I can only answer questions about the firm's clients, projects,
                 "invoices, or its onboarding, IT support, billing and project governance policies.")
 
 
+# Replay at most 3 prior turns: enough to resolve 'their' / 'that project' a turn or two back,
+# while each replayed turn adds ~100-300 input tokens to routing, SQL generation and synthesis.
+MAX_HISTORY_TURNS = 3
+
+
 def _history_block(history: list | None) -> str:
     if not history:
         return ""
-    turns = "\n".join(f"Q: {h['question']}\nA: {h['answer']}" for h in history[-3:])
+    turns = "\n".join(f"Q: {h['question']}\nA: {h['answer']}" for h in history[-MAX_HISTORY_TURNS:])
     return f"Conversation so far:\n{turns}\n\n"
 
 
@@ -44,7 +49,7 @@ def synthesise(question: str, results: dict, history: list | None) -> tuple[str,
     parts = "\n\n".join(f"[{n} tool, success={r['success']}]\n{r['answer']}" for n, r in results.items())
     prompt = (
         f"{_history_block(history)}Combine these tool answers into one concise plain-text answer (under 150 words, no tables or emoji). Use only "
-        "facts stated below and keep any source file names. If a tool failed, say what is missing. Do not add conclusions, durations or dates the answers do not state; a project start date is not the date it went on hold.\n\n"
+        "facts stated below. Attribute each fact to the agent it came from (for example: the SQL agent's database query shows..., according to the retrieval agent (onboarding_process.txt)...) and keep any source file names. If a tool failed, say what is missing. Do not add conclusions, durations or dates the answers do not state; a project start date is not the date it went on hold.\n\n"
         f"{parts}\n\nQuestion: {question}"
     )
     return call_claude(prompt, "synthesis", max_tokens=500)
@@ -55,7 +60,10 @@ def _run_tools(plan: dict, question: str, history: list | None) -> dict:
     for name in ROUTES[plan["route"]]:
         sub = plan.get(f"{name}_question")
         # Standalone sub-questions need no history; the fallback path keeps it.
-        results[name] = run_tool(name, sub or question, None if sub else history)
+        # SQL generation always gets capped history so follow-ups keep their filters.
+        # Retrieval gets it only on fallback, since it prepends history[-1] to the search text.
+        hist = history[-MAX_HISTORY_TURNS:] if history else None
+        results[name] = run_tool(name, sub or question, hist if (name == "sql" or not sub) else None)
     return results
 
 
