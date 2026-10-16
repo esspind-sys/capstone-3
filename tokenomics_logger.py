@@ -43,11 +43,13 @@ def sum_usage(records: list[dict]) -> dict:
     return {"input_tokens": inp, "output_tokens": out, "cost_usd": token_cost(inp, out)}
 
 
-def run_traced_query(orchestrator, question: str, history: list | None = None) -> dict:
+def run_traced_query(orchestrator, question: str, history: list | None = None,
+                     confirmation: dict | None = None) -> dict:
     """Run one question through the compiled graph and log latency plus token usage."""
     start = time.perf_counter()
-    state = orchestrator.invoke({"question": question, "history": history})
+    state = orchestrator.invoke({"question": question, "history": history, "confirmation": confirmation})
     log_decision("trace", question, {"route": state.get("route"), "success": state.get("success"),
+                                      "needs_confirmation": state.get("needs_confirmation", False),
                                       "elapsed_s": round(time.perf_counter() - start, 2),
                                       "token_usage": state.get("token_usage", {})})
     return state

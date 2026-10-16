@@ -15,7 +15,7 @@ rm -rf build/hf_xet build/hf_xet-*.dist-info
 
 # model.onnx is NOT copied: it lives in S3 and is downloaded to /tmp at cold start
 cp -r agents lambda_handler.py orchestrator.py tool_registry.py bedrock_client.py \
-      tokenomics_logger.py onnx_embed.py tokenizer.json build/
+      tokenomics_logger.py onnx_embed.py confirmation.py tokenizer.json build/
 [ ! -e build/model.onnx ] || { echo "model.onnx leaked into build/"; exit 1; }
 
 .venv/bin/python -S -c "import sys; sys.path.insert(0, 'build'); \

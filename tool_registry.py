@@ -31,12 +31,13 @@ def _error_result(message: str) -> dict:
             "metadata": {"token_usage": sum_usage([]), "calls": []}}
 
 
-def run_tool(name: str, question: str, history: list | None = None) -> dict:
+def run_tool(name: str, question: str, history: list | None = None, **kwargs) -> dict:
+    """kwargs (e.g. confirmed_sql for the SQL agent) are forwarded to the tool function."""
     if name not in TOOLS:
         result = _error_result(f"Unknown tool '{name}'.")
     else:
         try:
-            result = TOOLS[name]["function"](question, history)
+            result = TOOLS[name]["function"](question, history, **kwargs)
         except Exception as e:  # a crashing tool must not crash the orchestrator
             result = _error_result(f"{name} tool error: {e}")
     missing = [k for k in REQUIRED_KEYS if k not in result]

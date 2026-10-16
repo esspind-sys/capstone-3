@@ -1,0 +1,7 @@
+[TOKENS] {"component": "routing", "input_tokens": 296, "output_tokens": 63, "cost_usd": 0.001833}
+[LOG] routing: {"route": "sql", "reason": "This is a data modification request targeting specific database records, which is routed to sql where a separate safety validator will handle it.", "sql_question": "Delete all overdue invoices from the database.", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 447, "output_tokens": 15, "cost_usd": 0.001566}
+[LOG] answer: {"route": "sql", "success": false, "token_usage": {"input_tokens": 743, "output_tokens": 78, "cost_usd": 0.003399}}
+route: sql | sql executed: {'sql': False}
+SQL attempted: ["DELETE FROM invoices WHERE status = 'overdue';"]
+answer: Query blocked by validation: Blocked: 'DELETE' is not permitted. Only read-only SELECT queries are allowed.

@@ -5,6 +5,7 @@ from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from tool_registry import describe_tools, run_tool
 from tokenomics_logger import call_claude, log_decision, sum_usage
+from confirmation import make_confirmation, verify_confirmation
 
 ROUTES = {"sql": ["sql"], "retrieval": ["retrieval"], "both": ["sql", "retrieval"], "none": []}
 _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
@@ -30,7 +31,8 @@ def route_question(question: str, history: list | None = None) -> tuple[dict, di
         f"{_history_block(history)}"
         'Pick ONE route: "sql", "retrieval", "both" (needs database facts AND policy rules), '
         'or "none" (neither tool covers it). For each tool you pick, write a standalone '
-        "sub-question for that tool only, resolving references to the conversation. Keep the user's own terms such as 'overdue' or 'on hold'; do not reword them into column conditions.\n"
+        "sub-question for that tool only, resolving references to the conversation. Keep the user's own terms such as 'overdue' or 'on hold'; do not reword them into column conditions. "
+        'Requests to delete, modify or insert data are "sql" (a separate safety validator blocks them), not "none".\n'
         'Reply with ONLY JSON: {"route": "...", "reason": "<one sentence>", '
         '"sql_question": "... or null", "retrieval_question": "... or null"}\n\n'
         f"Question: {question}"
@@ -62,7 +64,9 @@ def _run_agent(name: str, state: "OrchestratorState") -> dict:
     # SQL generation always gets capped history so follow-ups keep their filters.
     # Retrieval gets it only on fallback, since it prepends history[-1] to the search text.
     hist = history[-MAX_HISTORY_TURNS:] if history else None
-    result = run_tool(name, sub or state["question"], hist if (name == "sql" or not sub) else None)
+    # When confirming, the SQL agent runs the human-approved query instead of generating one.
+    extra = {"confirmed_sql": state["confirmation"]["sql"]} if name == "sql" and state.get("confirmation") else {}
+    result = run_tool(name, sub or state["question"], hist if (name == "sql" or not sub) else None, **extra)
     return {"results": {**state["results"], name: result}, f"{name}_result": result,
             "calls": state["calls"] + result["metadata"]["calls"]}
 
@@ -76,6 +80,8 @@ class OrchestratorState(TypedDict, total=False):
     sql_result: dict | None
     retrieval_result: dict | None
     calls: list
+    confirmation: dict | None     # signed token from an earlier flagged query; set only when confirming
+    needs_confirmation: bool
     final_answer: str
     success: bool
     token_usage: dict
@@ -85,6 +91,14 @@ def _route_node(state: OrchestratorState) -> dict:
     plan, usage = route_question(state["question"], state.get("history"))
     log_decision("routing", state["question"], plan)
     return {"plan": plan, "route": plan["route"], "calls": [usage], "results": {}}
+
+
+def _confirm_node(state: OrchestratorState) -> dict:
+    """Re-enter the graph with a human-approved query: skip routing, reuse the signed plan."""
+    conf = verify_confirmation(state["confirmation"])
+    log_decision("confirmation", conf["question"], {"sql": conf["sql"], "route": conf["plan"].get("route")})
+    return {"question": conf["question"], "plan": conf["plan"], "route": conf["plan"]["route"],
+            "calls": [], "results": {}}
 
 
 def _sql_agent_node(state: OrchestratorState) -> dict:
@@ -97,6 +111,14 @@ def _retrieval_agent_node(state: OrchestratorState) -> dict:
 
 def _answer_node(state: OrchestratorState) -> dict:
     results, calls = state["results"], list(state["calls"])
+    sql = results.get("sql")
+    if sql and sql["metadata"].get("needs_confirmation"):
+        usage = sum_usage(calls)
+        conf = make_confirmation(state["question"], sql["sources"][0], state["plan"])
+        log_decision("answer", state["question"], {"route": state["route"], "needs_confirmation": True,
+                                                   "reasons": sql["metadata"]["review_reasons"], "token_usage": usage})
+        return {"final_answer": sql["answer"], "success": False, "needs_confirmation": True,
+                "confirmation": conf, "calls": calls, "token_usage": usage}
     if not results:
         answer, success = OUT_OF_SCOPE, False
     elif len(results) == 1:
@@ -119,19 +141,28 @@ def _next_after_route(state: OrchestratorState) -> str:
 
 
 def _next_after_sql(state: OrchestratorState) -> str:
+    if state["results"]["sql"]["metadata"].get("needs_confirmation"):
+        return "answer"  # paused for confirmation: nothing else runs
     return "retrieval_agent" if "retrieval" in ROUTES[state["route"]] else "answer"
+
+
+def _entry(state: OrchestratorState) -> str:
+    return "confirm" if state.get("confirmation") else "route"
 
 
 def build_orchestrator():
     """LangGraph graph, one node per tool:
     route -> sql_agent -> (retrieval_agent if route is "both") -> answer
-    route -> retrieval_agent -> answer;  route -> answer when out of scope."""
+    route -> retrieval_agent -> answer;  route -> answer when out of scope.
+    A confirmation skips routing: confirm -> sql_agent -> ..."""
     graph = StateGraph(OrchestratorState)
     graph.add_node("route", _route_node)
+    graph.add_node("confirm", _confirm_node)
     graph.add_node("sql_agent", _sql_agent_node)
     graph.add_node("retrieval_agent", _retrieval_agent_node)
     graph.add_node("answer", _answer_node)
-    graph.set_entry_point("route")
+    graph.set_conditional_entry_point(_entry, {"route": "route", "confirm": "confirm"})
+    graph.add_edge("confirm", "sql_agent")
     graph.add_conditional_edges("route", _next_after_route,
                                 {"sql_agent": "sql_agent", "retrieval_agent": "retrieval_agent", "answer": "answer"})
     graph.add_conditional_edges("sql_agent", _next_after_sql,
@@ -144,15 +175,16 @@ def build_orchestrator():
 _GRAPH = None
 
 
-def answer_question(question: str, history: list | None = None) -> dict:
+def answer_question(question: str, history: list | None = None, confirmation: dict | None = None) -> dict:
     """Same return shape as before; now runs through the LangGraph graph."""
     global _GRAPH
     if _GRAPH is None:
         _GRAPH = build_orchestrator()
-    s = _GRAPH.invoke({"question": question, "history": history})
+    s = _GRAPH.invoke({"question": question, "history": history, "confirmation": confirmation})
     plan, results = s["plan"], s["results"]
     return {
         "success": s["success"], "answer": s["final_answer"],
+        "needs_confirmation": s.get("needs_confirmation", False), "confirmation": s.get("confirmation"),
         "sources": [src for r in results.values() for src in r["sources"]],
         "metadata": {"route": s["route"], "route_reason": plan.get("reason"),
                      "sub_questions": {n: plan.get(f"{n}_question") for n in results},

@@ -20,6 +20,10 @@ TEST_CASES = [
     ("trailing semicolon", "SELECT * FROM clients;", True, "passed"),
     ("CTE allowed", "WITH a AS (SELECT * FROM projects WHERE status = 'active') SELECT COUNT(*) FROM a", True, "passed"),
     ("EXPLAIN ANALYZE runs query", "EXPLAIN ANALYZE SELECT * FROM clients", False, "statement_type"),
+    ("keyword inside literal", "SELECT * FROM clients WHERE name ILIKE '%Update%'", True, "passed"),
+    ("semicolon inside literal", "SELECT * FROM clients WHERE name = 'a;b'", True, "passed"),
+    ("stacked after literal", "SELECT * FROM clients WHERE name = 'x'; DROP TABLE clients", False, "keyword"),
+    ("dollar-quote hiding", "SELECT $$ ' $$; DROP TABLE clients; SELECT $$ ' $$", False, "dollar_quote"),
 ]
 
 print("=" * 96)

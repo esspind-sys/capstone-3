@@ -1,8 +1,9 @@
 """
 agents/sql_validator.py -- mechanical safety gate for Claude-generated SQL.
-Three independent checks: (1) whole-word blocked keywords, (2) read-only
-statement type, (3) stacked statements. Check 3 runs on its own so two
-harmless-looking SELECTs chained with ';' are still blocked.
+Independent checks: (0) no dollar-quoting, (1) whole-word blocked keywords,
+(2) read-only statement type, (3) stacked statements. Keywords and ';' are checked
+outside string literals. Check 3 runs on its own so two harmless-looking SELECTs
+chained with ';' are still blocked.
 """
 import re
 
@@ -12,6 +13,7 @@ BLOCKED_KEYWORDS = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "TRUNCATE",
 
 # \b = word boundary: matches DELETE but not deleted_at; works across newlines/tabs
 _KEYWORD_RE = re.compile(r"\b(" + "|".join(BLOCKED_KEYWORDS) + r")\b", re.IGNORECASE)
+_LITERAL_RE = re.compile(r"'(?:[^']|'')*'")  # quoted string literal; '' is an escaped quote
 _ALLOWED_START_RE = re.compile(r"^\s*(SELECT|WITH)\b", re.IGNORECASE)
 
 
@@ -23,6 +25,13 @@ def validate_sql(query: str) -> dict:
     """Must run before every database call -- no exceptions."""
     if not query or not query.strip():
         return _blocked("empty query.", "empty")
+
+    # Dollar-quoting ($$...$$) could hide a statement from the literal stripping below.
+    if "$" in query:
+        return _blocked("dollar-quoted strings are not permitted.", "dollar_quote")
+
+    # Check keywords and ';' outside string literals, so 'Update Co' or 'a;b' are not false positives.
+    query = _LITERAL_RE.sub("''", query)
 
     match = _KEYWORD_RE.search(query)
     if match:

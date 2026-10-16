@@ -8,6 +8,7 @@ import re
 import psycopg2
 from dotenv import load_dotenv
 from agents.sql_validator import validate_sql
+from agents.sql_review import review_sql
 from tokenomics_logger import call_claude, sum_usage
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -107,12 +108,27 @@ def _result(success, answer, sql, validation, reason, row_count, calls) -> dict:
     }
 
 
-def run_sql_agent(question: str, history: list | None = None) -> dict:
-    sql, gen_usage = generate_sql(question, history)
-    calls = [gen_usage]
+def run_sql_agent(question: str, history: list | None = None, confirmed_sql: str | None = None) -> dict:
+    """confirmed_sql is a query a human already approved (signature checked by the caller).
+    It skips generation and the unusual-query pause, but execute_query still validates it."""
+    if confirmed_sql is not None:
+        sql, calls = confirmed_sql, []
+    else:
+        sql, gen_usage = generate_sql(question, history)
+        calls = [gen_usage]
     if sql.upper() == CANNOT_ANSWER:
         return _result(False, "The database does not contain information that answers this question.",
                        None, "NOT_RUN", "Model reported the schema cannot answer this.", 0, calls)
+
+    if confirmed_sql is None:
+        validation = validate_sql(sql)
+        review = review_sql(sql) if validation["valid"] else {"unusual": False, "reasons": []}
+        if review["unusual"]:  # passed validation but looks risky: pause, run nothing
+            reasons = " ".join(review["reasons"])
+            out = _result(False, f"This query needs confirmation before it runs. {reasons}\nSQL: {sql}",
+                          sql, "PASSED", "Flagged for confirmation.", 0, calls)
+            out["metadata"].update({"needs_confirmation": True, "review_reasons": review["reasons"]})
+            return out
 
     result = execute_query(sql)
     status = "PASSED" if result["validation"]["valid"] else "BLOCKED"

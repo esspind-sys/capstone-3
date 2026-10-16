@@ -1,9 +1,12 @@
 """lambda_handler.py -- wraps the orchestrator in the format Lambda expects.
 Lambda keeps no memory between invocations, so the caller carries the conversation:
-send "history" (a list of {question, answer}) in the body and get the updated list back."""
+send "history" (a list of {question, answer}) in the body and get the updated list back.
+Flagged queries come back with needs_confirmation + a signed "confirmation" object;
+send that object back unchanged as "confirmation" to run exactly that query."""
 import json
 from orchestrator import build_orchestrator, MAX_HISTORY_TURNS
 from tokenomics_logger import run_traced_query
+from confirmation import verify_confirmation
 
 orchestrator = build_orchestrator()
 
@@ -26,7 +29,13 @@ def _clean_history(raw) -> list:
 def handler(event, context):
     try:
         body = json.loads(event.get("body") or "{}")
+        confirmation = body.get("confirmation")  # echo of the object returned with needs_confirmation
         question = str(body.get("question", "")).strip()
+        if confirmation is not None:
+            try:  # an edited query or plan is rejected before anything runs
+                question = verify_confirmation(confirmation)["question"]
+            except ValueError as e:
+                return {"statusCode": 403, "body": json.dumps({"error": str(e)})}
         if not question:
             return _bad_request("question is required")
         try:
@@ -34,17 +43,23 @@ def handler(event, context):
         except ValueError as e:
             return _bad_request(str(e))
 
-        result = run_traced_query(orchestrator, question, history or None)
+        result = run_traced_query(orchestrator, question, history or None, confirmation)
 
         sql = result.get("sql_result") or {}
-        turn = {"question": question, "answer": result["final_answer"]}
-        return {"statusCode": 200, "body": json.dumps({
+        paused = bool(result.get("needs_confirmation"))
+        # A paused question has no answer yet, so it is not added to the conversation.
+        turn = [] if paused else [{"question": question, "answer": result["final_answer"]}]
+        out = {
             "answer": result["final_answer"],
             "route": result["route"],
             "sql_validation": sql.get("metadata", {}).get("validation"),
             "sql_query": (sql.get("sources") or [None])[0],
             "token_usage": result.get("token_usage", {}),
-            "history": (history + [turn])[-MAX_HISTORY_TURNS:],
-        })}
+            "history": (history + turn)[-MAX_HISTORY_TURNS:],
+        }
+        if paused:
+            out.update({"needs_confirmation": True, "confirmation": result["confirmation"],
+                        "review_reasons": sql["metadata"]["review_reasons"]})
+        return {"statusCode": 200, "body": json.dumps(out)}
     except Exception as e:
         return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
