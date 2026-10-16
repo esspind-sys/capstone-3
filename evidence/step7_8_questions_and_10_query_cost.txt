@@ -1,3 +1,5 @@
+# Q7 superseded by step7_q7_end_to_end.txt (router now sends modification requests to the SQL agent; validator blocks the DELETE)
+# Q7 superseded by step7_q7_end_to_end.txt (router now sends modification requests to the SQL agent; validator blocks the DELETE)
 [TOKENS] {"component": "routing", "input_tokens": 238, "output_tokens": 55, "cost_usd": 0.001539}
 [LOG] routing: {"route": "sql", "reason": "This is a straightforward count of active projects, which is available directly from the firm database.", "sql_question": "How many active projects do we have?", "retrieval_question": null}
 [TOKENS] {"component": "sql_generation", "input_tokens": 388, "output_tokens": 18, "cost_usd": 0.001434}

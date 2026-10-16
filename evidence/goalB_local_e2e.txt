@@ -1,0 +1,61 @@
+[TOKENS] {"component": "routing", "input_tokens": 289, "output_tokens": 45, "cost_usd": 0.001542}
+[LOG] routing: {"route": "sql", "reason": "Listing invoices requires querying the firm database for invoice records.", "sql_question": "List every invoice.", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 441, "output_tokens": 9, "cost_usd": 0.001458}
+[LOG] answer: {"route": "sql", "needs_confirmation": true, "reasons": ["No WHERE or LIMIT clause: this returns every row of the table."], "token_usage": {"input_tokens": 730, "output_tokens": 54, "cost_usd": 0.003}}
+[PASS] flagged: needs_confirmation 
+[PASS] flagged: nothing executed 
+   SQL: SELECT * FROM invoices; 
+   reasons: This query needs confirmation before it runs. No WHERE or LIMIT clause: this returns every row of the table.
+[LOG] confirmation: {"sql": "SELECT * FROM invoices;", "route": "sql"}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 389, "output_tokens": 215, "cost_usd": 0.004392}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 389, "output_tokens": 215, "cost_usd": 0.004392}}
+[PASS] confirmed: executed 
+[PASS] confirmed: same SQL 
+   answer: There are 7 invoices total:
+
+- Invoice 1: Project 1, $45,000, paid, due 2025-03-01, paid 2025-02-28
+- Invoice 2: Project 1, $45,000, pending, due 2025
+[PASS] tampered SQL rejected (confirmation rejected: the query does not match the one that was flagged)
+[TOKENS] {"component": "routing", "input_tokens": 294, "output_tokens": 50, "cost_usd": 0.001632}
+[LOG] routing: {"route": "sql", "reason": "This is a count of active projects, which is a database fact.", "sql_question": "How many active projects do we have?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 445, "output_tokens": 16, "cost_usd": 0.001575}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 127, "output_tokens": 11, "cost_usd": 0.000546}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 866, "output_tokens": 77, "cost_usd": 0.003753}}
+[PASS] normal question: no pause 
+[LOG] confirmation: {"sql": "DROP TABLE invoices", "route": "sql"}
+[LOG] answer: {"route": "sql", "success": false, "token_usage": {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0}}
+[PASS] confirmed unsafe SQL still blocked (Query blocked by validation: Blocked: 'DROP' is not permitted. Only read-only SE)
+[TOKENS] {"component": "routing", "input_tokens": 297, "output_tokens": 57, "cost_usd": 0.001746}
+[LOG] routing: {"route": "sql", "reason": "This is a count of active projects for a specific client, which is a database fact.", "sql_question": "How many active projects does Acme Corp have?", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 448, "output_tokens": 56, "cost_usd": 0.002184}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 174, "output_tokens": 14, "cost_usd": 0.000732}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 919, "output_tokens": 127, "cost_usd": 0.004662}}
+[TOKENS] {"component": "routing", "input_tokens": 331, "output_tokens": 75, "cost_usd": 0.002118}
+[LOG] routing: {"route": "sql", "reason": "The request is for specific data records \u2014 consultants and invoices linked to Acme Corp's active projects \u2014 which are all stored in the firm database.", "sql_question": "Show the consultants and invoices for Acme Corp's active projects.", "retrieval_question": null}
+[TOKENS] {"component": "sql_generation", "input_tokens": 487, "output_tokens": 184, "cost_usd": 0.004221}
+[LOG] answer: {"route": "sql", "needs_confirmation": true, "reasons": ["Reads 4 tables (more than 3)."], "token_usage": {"input_tokens": 818, "output_tokens": 259, "cost_usd": 0.006339}}
+   follow-up SQL: SELECT
+    c2.id AS consultant_id,
+    c2.name AS consultant_name,
+    c2.grade,
+    c2.specialisation,
+    c2.billable_hours,
+    i.id AS invoice_id,
+    i.amount,
+    i.status AS invoice_status,
+    i.due_date,
+    i.paid_date,
+    p.name AS project_name
+FROM clients c1
+JOIN projects p ON p.client_id = c1.id
+LEFT JOIN consultants c2 ON c2.project_id = p.id
+LEFT JOIN invoices i ON i.project_id = p.id
+WHERE c1.name ILIKE '%Acme Corp%'
+  AND p.status = 'active'
+[PASS] follow-up flagged 
+[PASS] flagged SQL reflects Acme context 
+[LOG] confirmation: {"sql": "SELECT\n    c2.id AS consultant_id,\n    c2.name AS consultant_name,\n    c2.grade,\n    c2.specialisation,\n    c2.billable_hours,\n    i.id AS invoice_id,\n    i.amount,\n    i.status AS invoice_status,\n    i.due_date,\n    i.paid_date,\n    p.name AS project_name\nFROM clients c1\nJOIN projects p ON p.client_id = c1.id\nLEFT JOIN consultants c2 ON c2.project_id = p.id\nLEFT JOIN invoices i ON i.project_id = p.id\nWHERE c1.name ILIKE '%Acme Corp%'\n  AND p.status = 'active'", "route": "sql"}
+[TOKENS] {"component": "sql_interpretation", "input_tokens": 484, "output_tokens": 102, "cost_usd": 0.002982}
+[LOG] answer: {"route": "sql", "success": true, "token_usage": {"input_tokens": 484, "output_tokens": 102, "cost_usd": 0.002982}}
+[PASS] confirming runs exactly that query 
+10/10 passed

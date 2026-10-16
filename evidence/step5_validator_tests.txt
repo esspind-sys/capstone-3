@@ -16,5 +16,9 @@ SQL VALIDATOR TEST SUITE
 [PASS] trailing semicolon           valid=True  check=passed         | SELECT * FROM clients;
 [PASS] CTE allowed                  valid=True  check=passed         | WITH a AS (SELECT * FROM projects WHERE status =
 [PASS] EXPLAIN ANALYZE runs query   valid=False check=statement_type | EXPLAIN ANALYZE SELECT * FROM clients
+[PASS] keyword inside literal       valid=True  check=passed         | SELECT * FROM clients WHERE name ILIKE '%Update%
+[PASS] semicolon inside literal     valid=True  check=passed         | SELECT * FROM clients WHERE name = 'a;b'
+[PASS] stacked after literal        valid=False check=keyword        | SELECT * FROM clients WHERE name = 'x'; DROP TAB
+[PASS] dollar-quote hiding          valid=False check=dollar_quote   | SELECT $$ ' $$; DROP TABLE clients; SELECT $$ ' 
 ================================================================================================
-15/15 passed
+19/19 passed

@@ -1,0 +1,16 @@
+[PASS] SELECT * with no WHERE/LIMIT is flagged
+[PASS] 4-table join is flagged
+[PASS] filtered query is routine
+[PASS] LIMIT makes it routine
+[PASS] bare COUNT(*) is routine
+[PASS] 3-table join with WHERE is routine
+[PASS] 'WHERE' inside a literal does not count
+[PASS] untouched confirmation verifies
+[PASS] altered SQL is rejected
+[PASS] altered question is rejected
+[PASS] altered plan is rejected
+[PASS] forged token is rejected
+[PASS] missing token is rejected
+[PASS] expired confirmation is rejected
+[PASS] extended expiry is rejected
+15/15 passed

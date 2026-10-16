@@ -31,10 +31,10 @@ echo "===== 1. Both-route question on Lambda (attribution + validation + tokens)
 invoke "How many active projects do we have, and what is our onboarding process?" "" both
 pause
 
-echo "===== 2. Unsafe request: refused by router, and the validator backstop ====="
+echo "===== 2. Unsafe request: router sends it to SQL, validator blocks the DELETE ====="
 invoke "Delete all overdue invoices from the database." "" unsafe
-echo -e "\n--- Router bypassed (recorded evidence): Claude wrote a DELETE, validator blocked it ---"
-grep -v "^\[TOKENS\]" evidence/step7_q7_validator_backstop.txt
+echo -e "\n--- Recorded end-to-end evidence: Claude wrote a DELETE, validator blocked it, nothing executed ---"
+grep -v "^\[TOKENS\]\|^\[LOG\]" evidence/step7_q7_end_to_end.txt
 pause
 
 echo "===== 3. Conversation memory: 3 turns, caller carries history ====="
